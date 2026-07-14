@@ -58,9 +58,9 @@ create table public.exchanges (
   id uuid primary key default gen_random_uuid(),
   skill_id uuid references public.skills (id) on delete set null,
   skill_title text,
-  provider_id uuid not null references public.profiles (id) on delete cascade,
+  provider_id uuid references public.profiles (id) on delete set null,
   provider_name text,
-  requester_id uuid not null references public.profiles (id) on delete cascade,
+  requester_id uuid references public.profiles (id) on delete set null,
   requester_name text,
   message text,
   exchange_offer text,
@@ -82,9 +82,9 @@ create index exchanges_requester_idx on public.exchanges (requester_id);
 create table public.messages (
   id uuid primary key default gen_random_uuid(),
   exchange_id uuid not null references public.exchanges (id) on delete cascade,
-  sender_id uuid not null references public.profiles (id) on delete cascade,
+  sender_id uuid references public.profiles (id) on delete set null,
   sender_name text,
-  receiver_id uuid not null references public.profiles (id) on delete cascade,
+  receiver_id uuid references public.profiles (id) on delete set null,
   content text not null check (char_length(content) between 1 and 4000),
   read boolean not null default false,
   created_date timestamptz not null default now(),
@@ -97,9 +97,9 @@ create index messages_receiver_unread_idx on public.messages (receiver_id) where
 create table public.reviews (
   id uuid primary key default gen_random_uuid(),
   exchange_id uuid not null references public.exchanges (id) on delete cascade,
-  reviewer_id uuid not null references public.profiles (id) on delete cascade,
+  reviewer_id uuid references public.profiles (id) on delete set null,
   reviewer_name text,
-  reviewee_id uuid not null references public.profiles (id) on delete cascade,
+  reviewee_id uuid references public.profiles (id) on delete set null,
   rating integer not null check (rating between 1 and 5),
   comment text,
   created_date timestamptz not null default now(),
@@ -121,7 +121,7 @@ create table public.verification_requests (
   status text not null default 'pending'
     check (status in ('pending','approved','rejected')),
   rejection_reason text,
-  reviewed_by uuid references public.profiles (id),
+  reviewed_by uuid references public.profiles (id) on delete set null,
   created_date timestamptz not null default now(),
   updated_date timestamptz not null default now()
 );
@@ -141,7 +141,7 @@ create table public.reports (
   status text not null default 'pending'
     check (status in ('pending','resolved','dismissed')),
   admin_notes text,
-  resolved_by uuid references public.profiles (id),
+  resolved_by uuid references public.profiles (id) on delete set null,
   created_date timestamptz not null default now(),
   updated_date timestamptz not null default now()
 );
@@ -150,7 +150,7 @@ create table public.reports (
 create table public.user_warnings (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles (id) on delete cascade,
-  admin_id uuid not null references public.profiles (id),
+  admin_id uuid references public.profiles (id) on delete set null,
   reason text not null,
   created_date timestamptz not null default now()
 );
@@ -329,6 +329,9 @@ create trigger profiles_suspend_hides_skills
 create or replace function public.guard_message_update()
 returns trigger language plpgsql as $$
 begin
+  if coalesce(current_setting('app.bypass_guard', true), 'off') = 'on' then
+    return new;
+  end if;
   if new.content is distinct from old.content
      or new.sender_id is distinct from old.sender_id
      or new.receiver_id is distinct from old.receiver_id
@@ -387,11 +390,19 @@ create trigger exchanges_rate_limit
 
 -- GDPR-style account deletion (spec §7): anonymize what the counterparty
 -- keeps, delete the rest, then delete the auth user (cascades to profile).
+-- messages.sender_id/receiver_id, exchanges.provider_id/requester_id and
+-- reviews.reviewer_id/reviewee_id are ON DELETE SET NULL (not cascade), so
+-- deleting the auth user only nulls those FKs on the counterparty's rows
+-- instead of deleting them — the name-anonymization updates below survive.
+-- The FK-driven SET NULL updates on messages would otherwise trip
+-- guard_message_update's "sender_id changed" check and abort the whole
+-- deletion, so bypass that guard for the duration of this transaction.
 create or replace function public.delete_my_account()
 returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'Not authenticated'; end if;
+  perform set_config('app.bypass_guard', 'on', true);
   update public.messages  set sender_name = 'Deleted member' where sender_id = uid;
   update public.reviews   set reviewer_name = 'Deleted member' where reviewer_id = uid;
   update public.exchanges set provider_name  = 'Deleted member' where provider_id  = uid;
