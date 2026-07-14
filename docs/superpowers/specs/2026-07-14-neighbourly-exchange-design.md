@@ -207,8 +207,16 @@ pending ──accept──► accepted ──start──► in_progress ──co
   moderation rights (hide/warn/ban), liability disclaimer for neighbor meetups.
 - **Privacy Policy** — data collected, fuzzy-location explanation, processors
   (Supabase, Netlify), no ad tracking, deletion rights, contact.
-- **Legal Notice** — operator identity/contact (like the original app's Legal
-  page). Footer links to all three, as in the prototype.
+- **Legal Notice** — same section structure as the prototype's Legal page:
+  Company/Operator Information, Platform Description (barter system, no
+  monetary transactions, platform-not-a-party disclaimer), Disclaimer
+  (no guarantee of user quality/safety; verification is not a trustworthiness
+  guarantee), Intellectual Property, Governing Law & Jurisdiction, Dispute
+  Resolution, and an "informational purposes / consult an attorney / subject
+  to change" notice. The prototype's content is Base44-fabricated
+  ("NeighborSkill, Inc.", Delaware, fake registration number) and MUST NOT
+  ship — real operator details and the correct jurisdiction go in before
+  launch (see §11). Footer links to all three pages, as in the prototype.
 
 ## 8. Testing
 
@@ -244,6 +252,9 @@ pending ──accept──► accepted ──start──► in_progress ──co
 
 ## 11. Open items
 
-- Operator details for the Legal Notice page (name/contact) — needed from the
-  owner before launch, placeholder until then.
+- Operator details for the Legal Notice page — real operator/company name,
+  contact email(s) (legal + disputes/support), address if applicable, and the
+  actual governing-law jurisdiction (the prototype's "State of California" is
+  fabricated). Clearly-marked placeholders until provided; must be replaced
+  before launch.
 - Final category list for skills (start with the prototype's eight).
