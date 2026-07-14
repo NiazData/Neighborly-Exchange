@@ -409,6 +409,7 @@ begin
   update public.exchanges set requester_name = 'Deleted member' where requester_id = uid;
   delete from public.skills where user_id = uid;
   delete from auth.users where id = uid;
+  perform set_config('app.bypass_guard', 'off', true);
 end $$;
 revoke all on function public.delete_my_account() from public;
 grant execute on function public.delete_my_account() to authenticated;
