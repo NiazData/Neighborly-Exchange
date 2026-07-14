@@ -334,7 +334,8 @@ create trigger profiles_suspend_hides_skills
 create or replace function public.guard_message_update()
 returns trigger language plpgsql as $$
 begin
-  if coalesce(current_setting('app.bypass_guard', true), 'off') = 'on' then
+  if coalesce(current_setting('app.bypass_guard', true), 'off') = 'on'
+     or auth.uid() is null then
     return new;
   end if;
   if new.content is distinct from old.content
@@ -349,6 +350,29 @@ end $$;
 create trigger messages_guard
   before update on public.messages
   for each row execute function public.guard_message_update();
+
+-- exchanges: participants and provenance are frozen after insert.
+-- skill_id may only change to null (FK on delete set null when a skill is
+-- removed). auth.uid() is null for service-role/owner sessions (seeds,
+-- dashboard), which stay unrestricted like the bypass flag.
+create or replace function public.guard_exchange_update()
+returns trigger language plpgsql as $$
+begin
+  if coalesce(current_setting('app.bypass_guard', true), 'off') = 'on'
+     or auth.uid() is null then
+    return new;
+  end if;
+  if (new.skill_id is distinct from old.skill_id and new.skill_id is not null)
+     or new.requester_id is distinct from old.requester_id
+     or new.provider_id is distinct from old.provider_id
+     or new.created_by is distinct from old.created_by then
+    raise exception 'Exchange participants cannot be changed';
+  end if;
+  return new;
+end $$;
+create trigger exchanges_guard
+  before update on public.exchanges
+  for each row execute function public.guard_exchange_update();
 
 -- rate limits (spec §7)
 create or replace function public.rate_limit_messages()
