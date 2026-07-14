@@ -62,6 +62,7 @@ create table public.exchanges (
   provider_name text,
   requester_id uuid references public.profiles (id) on delete set null,
   requester_name text,
+  created_by uuid default auth.uid() references public.profiles (id) on delete set null,
   message text,
   exchange_offer text,
   status text not null default 'pending'
@@ -263,6 +264,10 @@ create or replace function public.validate_exchange_transition()
 returns trigger language plpgsql as $$
 begin
   if new.status is distinct from old.status then
+    if old.status = 'pending' and new.status in ('accepted','declined')
+       and auth.uid() is not null and auth.uid() = old.created_by then
+      raise exception 'Only the other participant can accept or decline a request';
+    end if;
     if not (
       (old.status = 'pending'     and new.status in ('accepted','declined','cancelled')) or
       (old.status = 'accepted'    and new.status in ('in_progress','completed','cancelled','disputed')) or
@@ -378,7 +383,7 @@ create or replace function public.rate_limit_exchanges()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if (select count(*) from public.exchanges
-      where requester_id = new.requester_id
+      where created_by = new.created_by
         and created_date > now() - interval '1 day') >= 20 then
     raise exception 'Rate limit: too many exchange requests today';
   end if;

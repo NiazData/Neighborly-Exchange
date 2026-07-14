@@ -84,8 +84,16 @@ create policy skills_delete on public.skills for delete
 create policy exchanges_select on public.exchanges for select
   using (requester_id = auth.uid() or provider_id = auth.uid() or public.is_admin());
 create policy exchanges_insert on public.exchanges for insert
-  with check ((requester_id = auth.uid() or provider_id = auth.uid())
-              and public.is_active());
+  with check (
+    created_by = auth.uid()
+    and (requester_id = auth.uid() or provider_id = auth.uid())
+    and public.is_active()
+    and exists (select 1 from public.skills s
+                where s.id = skill_id
+                  and s.status = 'active'
+                  and s.user_id in (requester_id, provider_id)
+                  and s.user_id <> auth.uid())
+  );
 create policy exchanges_update on public.exchanges for update
   using (((requester_id = auth.uid() or provider_id = auth.uid())
           and public.is_active()) or public.is_admin());
@@ -99,7 +107,9 @@ create policy messages_insert on public.messages for insert
     and exists (select 1 from public.exchanges e
                 where e.id = exchange_id
                   and auth.uid() in (e.requester_id, e.provider_id)
-                  and e.status in ('pending','accepted','in_progress'))
+                  and e.status in ('pending','accepted','in_progress')
+                  and receiver_id in (e.requester_id, e.provider_id)
+                  and receiver_id <> auth.uid())
   );
 create policy messages_update_read on public.messages for update
   using (receiver_id = auth.uid());   -- guard trigger restricts to read-flag
