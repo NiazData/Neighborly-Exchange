@@ -60,7 +60,7 @@ export default function MySkills() {
       views: 0,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['mySkills']);
+      queryClient.invalidateQueries({ queryKey: ['mySkills'] });
       toast.success('Skill posted successfully!');
       setShowForm(false);
       setFormLoading(false);
@@ -74,7 +74,7 @@ export default function MySkills() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => Skill.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['mySkills']);
+      queryClient.invalidateQueries({ queryKey: ['mySkills'] });
       toast.success('Skill updated!');
       setShowForm(false);
       setEditingSkill(null);
@@ -89,7 +89,7 @@ export default function MySkills() {
   const deleteMutation = useMutation({
     mutationFn: (id) => Skill.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['mySkills']);
+      queryClient.invalidateQueries({ queryKey: ['mySkills'] });
       toast.success('Skill deleted');
       setDeleteConfirm(null);
     }
@@ -107,7 +107,7 @@ export default function MySkills() {
   const toggleStatus = async (skill) => {
     const newStatus = skill.status === 'active' ? 'paused' : 'active';
     await Skill.update(skill.id, { status: newStatus });
-    queryClient.invalidateQueries(['mySkills']);
+    queryClient.invalidateQueries({ queryKey: ['mySkills'] });
     toast.success(`Skill ${newStatus === 'active' ? 'activated' : 'paused'}`);
   };
 

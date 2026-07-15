@@ -80,7 +80,7 @@ export default function Messages() {
           table: 'messages',
           filter: `exchange_id=eq.${selectedExchange.id}`,
         },
-        () => queryClient.invalidateQueries(['messages', selectedExchange.id]),
+        () => queryClient.invalidateQueries({ queryKey: ['messages', selectedExchange.id] }),
       )
       .subscribe();
     return () => supabase.removeChannel(channel);
@@ -113,7 +113,7 @@ export default function Messages() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['messages', selectedExchange?.id]);
+      queryClient.invalidateQueries({ queryKey: ['messages', selectedExchange?.id] });
       setNewMessage('');
     }
   });

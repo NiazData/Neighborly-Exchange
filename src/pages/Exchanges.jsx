@@ -47,7 +47,7 @@ export default function Exchanges() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => Exchange.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['exchanges']);
+      queryClient.invalidateQueries({ queryKey: ['exchanges'] });
     }
   });
 

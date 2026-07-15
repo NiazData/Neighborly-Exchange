@@ -124,8 +124,8 @@ export default function Admin() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['verificationRequests']);
-      queryClient.invalidateQueries(['adminUsers']);
+      queryClient.invalidateQueries({ queryKey: ['verificationRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       toast.success('Verification approved!');
       setSelectedVerification(null);
     }
@@ -141,7 +141,7 @@ export default function Admin() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['verificationRequests']);
+      queryClient.invalidateQueries({ queryKey: ['verificationRequests'] });
       toast.success('Verification rejected');
       setSelectedVerification(null);
       setRejectionReason('');
@@ -157,7 +157,7 @@ export default function Admin() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['reports']);
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
       toast.success('Report resolved');
       setSelectedReport(null);
       setResolutionNotes('');
@@ -172,7 +172,7 @@ export default function Admin() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['adminUsers']);
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       toast.success('User suspended');
       setSuspendDialog(null);
     }
