@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { auth } from '@/api/auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -11,18 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Globe, Bell, Shield, Trash2, LogOut, Loader2 } from 'lucide-react';
+
+
+import { Globe, Bell, Shield, LogOut, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -58,7 +49,7 @@ export default function Settings() {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await auth.me();
       setUser(userData);
       setSettings({
         preferred_language: userData.preferred_language || 'en',
@@ -68,20 +59,20 @@ export default function Settings() {
         show_phone: userData.show_phone || false,
       });
     } catch (e) {
-      base44.auth.redirectToLogin();
+      auth.redirectToLogin();
     }
   };
 
   const handleSave = async () => {
     setSaving(true);
-    await base44.auth.updateMe(settings);
+    await auth.updateMe(settings);
     toast.success('Settings saved!');
     setSaving(false);
     window.location.reload();
   };
 
   const handleLogout = () => {
-    base44.auth.logout();
+    auth.logout();
   };
 
   if (!user) {

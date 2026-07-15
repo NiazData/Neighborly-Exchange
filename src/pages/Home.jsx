@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { base44 } from '@/api/base44Client';
+import { Skill } from '@/api/entities';
+import { auth } from '@/api/auth';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Search, ArrowRight, Users, Shield, Star, MapPin, 
   Sparkles, Heart, HandHeart, ArrowRightLeft, ChevronRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SkillCard from '../components/skills/SkillCard';
-import CategoryFilter, { categories } from '../components/skills/CategoryFilter';
 
 const stats = [
   { label: 'Active Members', value: '2,500+', icon: Users },
@@ -42,14 +41,14 @@ export default function Home() {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await auth.me();
       setUser(userData);
     } catch (e) {}
   };
 
   const { data: recentSkills = [], isLoading } = useQuery({
     queryKey: ['recentSkills'],
-    queryFn: () => base44.entities.Skill.filter({ status: 'active' }, '-created_date', 6),
+    queryFn: () => Skill.filter({ status: 'active' }, '-created_date', 6),
   });
 
   const handleSearch = (e) => {
@@ -134,7 +133,7 @@ export default function Home() {
               {!user && (
                 <Button 
                   size="lg" 
-                  onClick={() => base44.auth.redirectToLogin()}
+                  onClick={() => auth.redirectToLogin()}
                   className="h-12 px-6 rounded-xl bg-slate-900 hover:bg-slate-800"
                 >
                   Join the Community
@@ -347,7 +346,7 @@ export default function Home() {
               </p>
               <Button 
                 size="lg" 
-                onClick={() => base44.auth.redirectToLogin()}
+                onClick={() => auth.redirectToLogin()}
                 className="h-14 px-8 text-lg rounded-xl bg-white text-emerald-700 hover:bg-emerald-50 shadow-xl"
               >
                 Get Started Free

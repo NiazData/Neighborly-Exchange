@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import { Exchange, Message } from '@/api/entities';
+import { auth } from '@/api/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, MessageSquare, ArrowLeft, Search } from 'lucide-react';
 import { format } from 'date-fns';
@@ -28,28 +28,24 @@ export default function Messages() {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await auth.me();
       setUser(userData);
     } catch (e) {
-      base44.auth.redirectToLogin();
+      auth.redirectToLogin();
     }
   };
+
+  const ACTIVE_STATUSES = ['accepted', 'in_progress', 'pending'];
 
   const { data: exchanges = [], isLoading: exchangesLoading } = useQuery({
     queryKey: ['messageExchanges', user?.id],
     queryFn: async () => {
-      const asProvider = await base44.entities.Exchange.filter({ 
-        provider_id: user.id,
-        status: { $in: ['accepted', 'in_progress', 'pending'] }
-      }, '-updated_date');
-      const asRequester = await base44.entities.Exchange.filter({ 
-        requester_id: user.id,
-        status: { $in: ['accepted', 'in_progress', 'pending'] }
-      }, '-updated_date');
-      
+      const asProvider = await Exchange.filter({ provider_id: user.id }, '-updated_date');
+      const asRequester = await Exchange.filter({ requester_id: user.id }, '-updated_date');
+
       const all = [...asProvider, ...asRequester];
       const unique = all.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
-      return unique;
+      return unique.filter(e => ACTIVE_STATUSES.includes(e.status));
     },
     enabled: !!user?.id,
   });
@@ -63,7 +59,7 @@ export default function Messages() {
 
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ['messages', selectedExchange?.id],
-    queryFn: () => base44.entities.Message.filter(
+    queryFn: () => Message.filter(
       { exchange_id: selectedExchange.id },
       'created_date'
     ),
@@ -78,7 +74,7 @@ export default function Messages() {
     if (selectedExchange && user && messages.length > 0) {
       const unreadMessages = messages.filter(m => m.receiver_id === user.id && !m.read);
       unreadMessages.forEach(async (msg) => {
-        await base44.entities.Message.update(msg.id, { read: true });
+        await Message.update(msg.id, { read: true });
       });
     }
   }, [messages, selectedExchange, user]);
@@ -88,7 +84,7 @@ export default function Messages() {
       const isProvider = selectedExchange.provider_id === user.id;
       const receiverId = isProvider ? selectedExchange.requester_id : selectedExchange.provider_id;
       
-      return base44.entities.Message.create({
+      return Message.create({
         exchange_id: selectedExchange.id,
         sender_id: user.id,
         sender_name: user.full_name,

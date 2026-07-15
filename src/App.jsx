@@ -1,12 +1,11 @@
 import { Toaster } from "@/components/ui/toaster"
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Login from '@/pages/Login';
 import Suspended from '@/pages/Suspended';
 
@@ -32,9 +31,7 @@ const AuthenticatedApp = () => {
 
   // Handle authentication errors
   if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
+    if (authError.type === 'auth_required') {
       // Redirect to login automatically
       navigateToLogin();
       return null;
@@ -44,7 +41,7 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Outside the authenticated Layout, like the legal pages */}
+      {/* Outside the authenticated Layout */}
       <Route path="/login" element={<Login />} />
       <Route path="/suspended" element={<Suspended />} />
       <Route path="/" element={
@@ -75,10 +72,10 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <NavigationTracker />
           <AuthenticatedApp />
         </Router>
         <Toaster />
+        <SonnerToaster />
       </QueryClientProvider>
     </AuthProvider>
   )

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { VerificationRequest } from '@/api/entities';
+import { auth } from '@/api/auth';
+import { UploadFile } from '@/api/storage';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { 
-  Shield, Upload, CheckCircle, Clock, XCircle, 
+  Shield, CheckCircle, Clock, XCircle, 
   Camera, FileText, AlertTriangle, Loader2 
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -33,17 +35,17 @@ export default function Verification() {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await auth.me();
       setUser(userData);
     } catch (e) {
-      base44.auth.redirectToLogin();
+      auth.redirectToLogin();
     }
   };
 
   const { data: existingRequest } = useQuery({
     queryKey: ['verificationRequest', user?.id],
     queryFn: async () => {
-      const requests = await base44.entities.VerificationRequest.filter(
+      const requests = await VerificationRequest.filter(
         { user_id: user.id },
         '-created_date',
         1
@@ -57,7 +59,7 @@ export default function Verification() {
     const file = e.target.files[0];
     if (!file) return;
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await UploadFile({ file });
     setIdDocument(file_url);
     setUploading(false);
     toast.success('ID document uploaded');
@@ -67,7 +69,7 @@ export default function Verification() {
     const file = e.target.files[0];
     if (!file) return;
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const { file_url } = await UploadFile({ file });
     setSelfie(file_url);
     setUploading(false);
     toast.success('Selfie uploaded');
@@ -80,7 +82,7 @@ export default function Verification() {
     }
 
     setSubmitting(true);
-    await base44.entities.VerificationRequest.create({
+    await VerificationRequest.create({
       user_id: user.id,
       user_email: user.email,
       user_name: user.full_name,

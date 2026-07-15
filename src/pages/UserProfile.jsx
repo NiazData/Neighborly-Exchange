@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { base44 } from '@/api/base44Client';
+import { Skill, Review, User } from '@/api/entities';
+import { auth } from '@/api/auth';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { 
-  MapPin, Star, CheckCircle, Calendar, 
+  MapPin, Star, CheckCircle, 
   MoreVertical, Flag, UserMinus, ArrowLeft, Loader2, MessageSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -36,7 +37,7 @@ export default function UserProfile() {
 
   const loadCurrentUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await auth.me();
       setCurrentUser(userData);
     } catch (e) {}
   };
@@ -44,7 +45,7 @@ export default function UserProfile() {
   const { data: profileUser, isLoading } = useQuery({
     queryKey: ['userProfile', userId],
     queryFn: async () => {
-      const users = await base44.entities.User.filter({ id: userId });
+      const users = await User.filter({ id: userId });
       return users[0];
     },
     enabled: !!userId,
@@ -52,25 +53,25 @@ export default function UserProfile() {
 
   const { data: userSkills = [] } = useQuery({
     queryKey: ['userSkills', userId],
-    queryFn: () => base44.entities.Skill.filter({ user_id: userId, status: 'active' }, '-created_date'),
+    queryFn: () => Skill.filter({ user_id: userId, status: 'active' }, '-created_date'),
     enabled: !!userId,
   });
 
   const { data: userReviews = [] } = useQuery({
     queryKey: ['userReviews', userId],
-    queryFn: () => base44.entities.Review.filter({ reviewee_id: userId }, '-created_date'),
+    queryFn: () => Review.filter({ reviewee_id: userId }, '-created_date'),
     enabled: !!userId,
   });
 
   const handleBlock = async () => {
     if (!currentUser) {
-      base44.auth.redirectToLogin();
+      auth.redirectToLogin();
       return;
     }
-    
+
     const blockedUsers = currentUser.blocked_users || [];
     if (!blockedUsers.includes(userId)) {
-      await base44.auth.updateMe({
+      await auth.updateMe({
         blocked_users: [...blockedUsers, userId]
       });
       toast.success('User blocked');

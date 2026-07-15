@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { base44 } from '@/api/base44Client';
+import { Skill, Review } from '@/api/entities';
+import { auth } from '@/api/auth';
 import { UploadFile } from '@/api/storage';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,13 +20,11 @@ import {
 } from '@/components/ui/dialog';
 import { 
   Pencil, MapPin, Star, CheckCircle, Shield, Camera, 
-  ArrowRightLeft, Calendar, Loader2, Upload
+  ArrowRightLeft, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import SkillCard from '../components/skills/SkillCard';
-import ReviewCard from '../components/reviews/ReviewCard';
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -40,7 +39,7 @@ export default function Profile() {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await auth.me();
       setUser(userData);
       setEditData({
         bio: userData.bio || '',
@@ -48,19 +47,19 @@ export default function Profile() {
         location: userData.location || { address: '', city: '' }
       });
     } catch (e) {
-      base44.auth.redirectToLogin();
+      auth.redirectToLogin();
     }
   };
 
   const { data: mySkills = [] } = useQuery({
     queryKey: ['profileSkills', user?.id],
-    queryFn: () => base44.entities.Skill.filter({ user_id: user.id, status: 'active' }, '-created_date', 4),
+    queryFn: () => Skill.filter({ user_id: user.id, status: 'active' }, '-created_date', 4),
     enabled: !!user?.id,
   });
 
   const { data: myReviews = [] } = useQuery({
     queryKey: ['profileReviews', user?.id],
-    queryFn: () => base44.entities.Review.filter({ reviewee_id: user.id }, '-created_date', 5),
+    queryFn: () => Review.filter({ reviewee_id: user.id }, '-created_date', 5),
     enabled: !!user?.id,
   });
 
@@ -69,16 +68,21 @@ export default function Profile() {
     if (!file) return;
 
     setUploading(true);
-    const { file_url } = await UploadFile({ file });
-    await base44.auth.updateMe({ avatar_url: file_url });
-    await loadUser();
-    setUploading(false);
-    toast.success('Profile photo updated!');
+    try {
+      const { file_url } = await UploadFile({ file });
+      await auth.updateMe({ avatar_url: file_url });
+      await loadUser();
+      toast.success('Profile photo updated!');
+    } catch (error) {
+      toast.error(error.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSaveProfile = async () => {
     setLoading(true);
-    await base44.auth.updateMe(editData);
+    await auth.updateMe(editData);
     await loadUser();
     setShowEditDialog(false);
     setLoading(false);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { Skill, Exchange, Report, VerificationRequest, ActivityLog, User } from '@/api/entities';
+import { auth } from '@/api/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,12 +37,10 @@ import {
 import { 
   Shield, Users, FileText, Flag, Activity, 
   CheckCircle, XCircle, Clock, Search, Eye,
-  Ban, AlertTriangle, Loader2, ArrowRightLeft,
-  TrendingUp, UserCheck
+  Ban, Loader2, ArrowRightLeft, UserCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { motion } from 'framer-motion';
 
 export default function Admin() {
   const [user, setUser] = useState(null);
@@ -59,7 +58,7 @@ export default function Admin() {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await auth.me();
       if (userData.role !== 'admin') {
         window.location.href = '/';
         return;
@@ -73,52 +72,52 @@ export default function Admin() {
   // Queries
   const { data: allUsers = [] } = useQuery({
     queryKey: ['adminUsers'],
-    queryFn: () => base44.entities.User.list('-created_date', 100),
+    queryFn: () => User.list('-created_date', 100),
     enabled: !!user,
   });
 
   const { data: verificationRequests = [] } = useQuery({
     queryKey: ['verificationRequests'],
-    queryFn: () => base44.entities.VerificationRequest.filter({ status: 'pending' }, '-created_date'),
+    queryFn: () => VerificationRequest.filter({ status: 'pending' }, '-created_date'),
     enabled: !!user,
   });
 
   const { data: reports = [] } = useQuery({
     queryKey: ['reports'],
-    queryFn: () => base44.entities.Report.filter({ status: 'pending' }, '-created_date'),
+    queryFn: () => Report.filter({ status: 'pending' }, '-created_date'),
     enabled: !!user,
   });
 
   const { data: allSkills = [] } = useQuery({
     queryKey: ['adminSkills'],
-    queryFn: () => base44.entities.Skill.list('-created_date', 100),
+    queryFn: () => Skill.list('-created_date', 100),
     enabled: !!user,
   });
 
   const { data: allExchanges = [] } = useQuery({
     queryKey: ['adminExchanges'],
-    queryFn: () => base44.entities.Exchange.list('-created_date', 100),
+    queryFn: () => Exchange.list('-created_date', 100),
     enabled: !!user,
   });
 
   const { data: activityLogs = [] } = useQuery({
     queryKey: ['activityLogs'],
-    queryFn: () => base44.entities.ActivityLog.list('-created_date', 50),
+    queryFn: () => ActivityLog.list('-created_date', 50),
     enabled: !!user,
   });
 
   // Mutations
   const approveVerificationMutation = useMutation({
     mutationFn: async (request) => {
-      await base44.entities.VerificationRequest.update(request.id, {
+      await VerificationRequest.update(request.id, {
         status: 'approved',
         reviewed_by: user.email,
         reviewed_date: new Date().toISOString(),
       });
       // Update user as verified
-      const users = await base44.entities.User.filter({ id: request.user_id });
+      const users = await User.filter({ id: request.user_id });
       if (users[0]) {
-        await base44.entities.User.update(request.user_id, {
+        await User.update(request.user_id, {
           is_verified: true,
           verification_date: new Date().toISOString(),
         });
@@ -134,7 +133,7 @@ export default function Admin() {
 
   const rejectVerificationMutation = useMutation({
     mutationFn: async ({ request, reason }) => {
-      await base44.entities.VerificationRequest.update(request.id, {
+      await VerificationRequest.update(request.id, {
         status: 'rejected',
         rejection_reason: reason,
         reviewed_by: user.email,
@@ -151,7 +150,7 @@ export default function Admin() {
 
   const resolveReportMutation = useMutation({
     mutationFn: async ({ report, status, notes }) => {
-      await base44.entities.Report.update(report.id, {
+      await Report.update(report.id, {
         status,
         resolution_notes: notes,
         resolved_by: user.email,
@@ -167,7 +166,7 @@ export default function Admin() {
 
   const suspendUserMutation = useMutation({
     mutationFn: async ({ userId, reason }) => {
-      await base44.entities.User.update(userId, {
+      await User.update(userId, {
         is_suspended: true,
         suspension_reason: reason,
       });

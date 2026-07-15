@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-// Base44-style sort strings: '-created_date' → created_date DESC
+// Legacy-style sort strings: '-created_date' → created_date DESC
 function parseSort(sort) {
   if (!sort) return null;
   const descending = sort.startsWith('-');

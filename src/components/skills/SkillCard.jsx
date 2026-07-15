@@ -4,7 +4,7 @@ import { createPageUrl } from '../../utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, Star, Clock, Eye, ArrowRight, CheckCircle } from 'lucide-react';
+import { MapPin, Clock, Eye, ArrowRight, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const categoryIcons = {

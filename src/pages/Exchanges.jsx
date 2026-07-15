@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { Exchange, Review } from '@/api/entities';
+import { auth } from '@/api/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, CheckCircle, ArrowRightLeft, XCircle, AlertTriangle } from 'lucide-react';
+import { Clock, CheckCircle, ArrowRightLeft, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
 import ExchangeCard from '../components/exchange/ExchangeCard';
 import ReviewForm from '../components/reviews/ReviewForm';
 
@@ -24,19 +23,19 @@ export default function Exchanges() {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await auth.me();
       setUser(userData);
     } catch (e) {
-      base44.auth.redirectToLogin();
+      auth.redirectToLogin();
     }
   };
 
   const { data: exchanges = [], isLoading } = useQuery({
     queryKey: ['exchanges', user?.id],
     queryFn: async () => {
-      const asProvider = await base44.entities.Exchange.filter({ provider_id: user.id }, '-created_date');
-      const asRequester = await base44.entities.Exchange.filter({ requester_id: user.id }, '-created_date');
-      
+      const asProvider = await Exchange.filter({ provider_id: user.id }, '-created_date');
+      const asRequester = await Exchange.filter({ requester_id: user.id }, '-created_date');
+
       // Combine and deduplicate
       const all = [...asProvider, ...asRequester];
       const unique = all.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
@@ -46,7 +45,7 @@ export default function Exchanges() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Exchange.update(id, data),
+    mutationFn: ({ id, data }) => Exchange.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['exchanges']);
     }
@@ -73,7 +72,7 @@ export default function Exchanges() {
     
     // Update user stats
     if (user) {
-      await base44.auth.updateMe({
+      await auth.updateMe({
         total_exchanges: (user.total_exchanges || 0) + 1
       });
     }
@@ -94,7 +93,7 @@ export default function Exchanges() {
     const revieweeId = isProvider ? selectedExchange.requester_id : selectedExchange.provider_id;
     const revieweeName = isProvider ? selectedExchange.requester_name : selectedExchange.provider_name;
     
-    await base44.entities.Review.create({
+    await Review.create({
       exchange_id: selectedExchange.id,
       reviewer_id: user.id,
       reviewer_name: user.full_name,
@@ -102,12 +101,6 @@ export default function Exchanges() {
       ...reviewData
     });
 
-    // Update reviewee stats
-    const reviews = await base44.entities.Review.filter({ reviewee_id: revieweeId });
-    const avgRating = reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
-    
-    // Note: Can't update other user's data directly, would need backend function
-    
     toast.success('Review submitted!');
     setShowReviewForm(false);
     setSelectedExchange(null);

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { base44 } from '@/api/base44Client';
+import { Skill } from '@/api/entities';
+import { auth } from '@/api/auth';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -15,8 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MapPin, Navigation, Search, CheckCircle, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { MapPin, Navigation, CheckCircle, Loader2 } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -50,7 +49,7 @@ export default function NearbyMap() {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await auth.me();
       setUser(userData);
       if (userData.location?.lat && userData.location?.lng) {
         setUserLocation([userData.location.lat, userData.location.lng]);
@@ -86,7 +85,7 @@ export default function NearbyMap() {
       if (selectedCategory !== 'all') filter.category = selectedCategory;
       if (selectedType !== 'all') filter.type = selectedType;
       
-      const results = await base44.entities.Skill.filter(filter, '-created_date', 100);
+      const results = await Skill.filter(filter, '-created_date', 100);
       // Filter skills with location data
       return results.filter(s => s.location?.lat && s.location?.lng);
     },

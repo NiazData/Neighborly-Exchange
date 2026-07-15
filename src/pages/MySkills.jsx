@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { Skill } from '@/api/entities';
+import { auth } from '@/api/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,7 +19,6 @@ import {
 import { Plus, Pencil, Trash2, Eye, Pause, Play, HandHeart, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import SkillCard from '../components/skills/SkillCard';
 import SkillForm from '../components/skills/SkillForm';
 
 export default function MySkills() {
@@ -35,21 +35,21 @@ export default function MySkills() {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await auth.me();
       setUser(userData);
     } catch (e) {
-      base44.auth.redirectToLogin();
+      auth.redirectToLogin();
     }
   };
 
   const { data: mySkills = [], isLoading } = useQuery({
     queryKey: ['mySkills', user?.id],
-    queryFn: () => base44.entities.Skill.filter({ user_id: user.id }, '-created_date'),
+    queryFn: () => Skill.filter({ user_id: user.id }, '-created_date'),
     enabled: !!user?.id,
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Skill.create({
+    mutationFn: (data) => Skill.create({
       ...data,
       user_id: user.id,
       user_name: user.full_name,
@@ -72,7 +72,7 @@ export default function MySkills() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Skill.update(id, data),
+    mutationFn: ({ id, data }) => Skill.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['mySkills']);
       toast.success('Skill updated!');
@@ -87,7 +87,7 @@ export default function MySkills() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Skill.delete(id),
+    mutationFn: (id) => Skill.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['mySkills']);
       toast.success('Skill deleted');
@@ -106,7 +106,7 @@ export default function MySkills() {
 
   const toggleStatus = async (skill) => {
     const newStatus = skill.status === 'active' ? 'paused' : 'active';
-    await base44.entities.Skill.update(skill.id, { status: newStatus });
+    await Skill.update(skill.id, { status: newStatus });
     queryClient.invalidateQueries(['mySkills']);
     toast.success(`Skill ${newStatus === 'active' ? 'activated' : 'paused'}`);
   };

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
-import { base44 } from '@/api/base44Client';
-import { 
-  Home, Search, MessageSquare, Users, Settings, Menu, X, 
-  Map, HandHeart, ArrowLeftRight, Bell, Shield, LogOut,
-  ChevronDown, User as UserIcon, Star, FileText, Globe
+import { Message } from '@/api/entities';
+import { auth } from '@/api/auth';
+import {
+  Home, Search, MessageSquare, Users, Settings, Menu, 
+  Map, HandHeart, ArrowLeftRight, Shield, LogOut,
+  ChevronDown, User as UserIcon, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -101,7 +102,7 @@ export default function Layout({ children, currentPageName }) {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await auth.me();
       setUser(userData);
     } catch (e) {
       console.log('Not logged in');
@@ -111,13 +112,13 @@ export default function Layout({ children, currentPageName }) {
 
   const loadUnreadCount = async () => {
     try {
-      const messages = await base44.entities.Message.filter({ receiver_id: user.id, read: false });
+      const messages = await Message.filter({ receiver_id: user.id, read: false });
       setUnreadMessages(messages.length);
     } catch (e) {}
   };
 
   const handleLogout = () => {
-    base44.auth.logout();
+    auth.logout();
   };
 
   const navItems = [
@@ -227,8 +228,8 @@ export default function Layout({ children, currentPageName }) {
                   </DropdownMenu>
                 </>
               ) : (
-                <Button 
-                  onClick={() => base44.auth.redirectToLogin()}
+                <Button
+                  onClick={() => auth.redirectToLogin()}
                   className="bg-emerald-600 hover:bg-emerald-700"
                 >
                   Sign In

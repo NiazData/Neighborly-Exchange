@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { Skill } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Filter, SlidersHorizontal, MapPin, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SkillCard from '../components/skills/SkillCard';
 import CategoryFilter from '../components/skills/CategoryFilter';
@@ -34,7 +34,7 @@ export default function Explore() {
       if (selectedCategory !== 'all') filter.category = selectedCategory;
       if (selectedType !== 'all') filter.type = selectedType;
       
-      const results = await base44.entities.Skill.filter(filter, '-created_date', 50);
+      const results = await Skill.filter(filter, '-created_date', 50);
       
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();

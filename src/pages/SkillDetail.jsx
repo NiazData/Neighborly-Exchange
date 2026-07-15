@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { base44 } from '@/api/base44Client';
+import { Skill, Exchange, Review, Report, User } from '@/api/entities';
+import { auth } from '@/api/auth';
+import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,12 +26,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { 
   ArrowLeft, MapPin, Clock, Eye, Star, CheckCircle, 
-  MessageSquare, Flag, MoreVertical, Share2, Calendar,
+  MessageSquare, Flag, MoreVertical, Share2,
   Loader2, ArrowRightLeft, UserMinus
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import ReviewCard from '../components/reviews/ReviewCard';
 
 const categoryIcons = {
   home_repairs: '🔧', technology: '💻', teaching: '📚', gardening: '🌱',
@@ -57,7 +58,7 @@ export default function SkillDetail() {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await auth.me();
       setUser(userData);
     } catch (e) {}
   };
@@ -65,10 +66,10 @@ export default function SkillDetail() {
   const { data: skill, isLoading: skillLoading } = useQuery({
     queryKey: ['skill', skillId],
     queryFn: async () => {
-      const results = await base44.entities.Skill.filter({ id: skillId });
+      const results = await Skill.filter({ id: skillId });
       if (results.length > 0) {
         // Increment views
-        await base44.entities.Skill.update(skillId, { views: (results[0].views || 0) + 1 });
+        await supabase.rpc('increment_skill_views', { skill: skillId });
         return results[0];
       }
       return null;
@@ -79,7 +80,7 @@ export default function SkillDetail() {
   const { data: skillOwner } = useQuery({
     queryKey: ['skillOwner', skill?.user_id],
     queryFn: async () => {
-      const users = await base44.entities.User.filter({ id: skill.user_id });
+      const users = await User.filter({ id: skill.user_id });
       return users[0];
     },
     enabled: !!skill?.user_id,
@@ -87,13 +88,13 @@ export default function SkillDetail() {
 
   const { data: ownerReviews = [] } = useQuery({
     queryKey: ['ownerReviews', skill?.user_id],
-    queryFn: () => base44.entities.Review.filter({ reviewee_id: skill.user_id }, '-created_date', 5),
+    queryFn: () => Review.filter({ reviewee_id: skill.user_id }, '-created_date', 5),
     enabled: !!skill?.user_id,
   });
 
   const requestMutation = useMutation({
     mutationFn: async () => {
-      return base44.entities.Exchange.create({
+      return Exchange.create({
         skill_id: skill.id,
         skill_title: skill.title,
         provider_id: skill.type === 'offering' ? skill.user_id : user.id,
@@ -120,7 +121,7 @@ export default function SkillDetail() {
 
   const handleRequestExchange = () => {
     if (!user) {
-      base44.auth.redirectToLogin();
+      auth.redirectToLogin();
       return;
     }
     setShowRequestDialog(true);
@@ -135,7 +136,7 @@ export default function SkillDetail() {
     if (!reportReason.trim()) return;
     setLoading(true);
     
-    await base44.entities.Report.create({
+    await Report.create({
       reporter_id: user.id,
       reporter_name: user.full_name,
       reported_user_id: skill.user_id,
@@ -158,7 +159,7 @@ export default function SkillDetail() {
     
     const blockedUsers = user.blocked_users || [];
     if (!blockedUsers.includes(skill.user_id)) {
-      await base44.auth.updateMe({
+      await auth.updateMe({
         blocked_users: [...blockedUsers, skill.user_id]
       });
       toast.success('User blocked');
