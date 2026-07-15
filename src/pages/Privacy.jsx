@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Shield, Eye, Database, Lock, Globe, Trash2, Bell, UserCheck } from 'lucide-react';
+import { Shield, Eye, Database, Lock, MapPin, Trash2, Bell, UserCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Seo from '@/components/Seo';
 
@@ -11,71 +10,53 @@ export default function Privacy() {
       icon: Database,
       title: "Information We Collect",
       content: `We collect information you provide directly:
-• Account information (name, email, phone)
-• Profile information (bio, location, photo)
-• Verification documents (stored securely and deleted after review)
-• Skills and exchange history
-• Messages between users
+• Account email
+• The profile information you write (bio, photo, skills)
+• Listings you create
+• Exchange records (who you exchanged with, and when)
+• Messages you send to other members
 • Reviews and ratings
 
-We also automatically collect:
-• Device information and IP address
-• Usage data and interactions
-• Location data (with your permission)`
+We do not collect payment information — the Platform is free and does not process payments.`
+    },
+    {
+      icon: MapPin,
+      title: "Location Privacy",
+      content: `We store the area point you set. Other members only ever see an approximated location, offset by up to ~300 metres, and your suburb name — never your exact position or address. We do not collect street addresses.`
     },
     {
       icon: Eye,
       title: "How We Use Your Information",
       content: `We use your information to:
-• Provide and improve our services
-• Match you with nearby neighbors
-• Process identity verification
-• Send notifications about exchanges
-• Ensure platform safety and security
+• Operate your account and profile
+• Show your listings to nearby neighbors, using the approximated location described above
+• Deliver messages and exchange notifications
+• Review reports and moderate the platform
 • Comply with legal obligations`
     },
     {
       icon: Lock,
-      title: "Information Sharing",
-      content: `We share your information only:
-• With other users as part of the exchange process
-• With service providers who assist our operations
-• When required by law or legal process
-• To protect rights, safety, and security
+      title: "Service Providers",
+      content: `We use a small number of service providers to run the Platform:
+• Supabase — database, authentication, and file storage
+• Netlify — hosting
 
-We never sell your personal information to third parties.`
+We do not use advertising trackers, we do not sell your data, and we do not use analytics cookies. Your information is not shared with anyone beyond these processors, other members (as part of using the Platform), and moderators reviewing a report.`
     },
     {
-      icon: Globe,
-      title: "Your Rights (GDPR & CCPA)",
-      content: `You have the right to:
-• Access your personal data
-• Correct inaccurate data
-• Delete your data ("right to be forgotten")
-• Restrict or object to processing
-• Data portability
-• Opt-out of sale of personal information (California)
-• Non-discrimination for exercising rights`
+      icon: Bell,
+      title: "Message Privacy",
+      content: `Messages you send are visible only to the two members in that conversation. If a conversation is reported, moderators may review it solely to investigate the report.`
     },
     {
       icon: Shield,
       title: "Data Security",
-      content: `We implement industry-standard security measures:
-• Encryption of data in transit and at rest
-• Regular security audits
-• Access controls and monitoring
-• Secure verification document handling
-• Immediate deletion of verification docs after review`
+      content: `We rely on Supabase's access controls and encryption in transit to protect your data. Access to member data is restricted to what is needed to operate and moderate the Platform.`
     },
     {
       icon: Trash2,
-      title: "Data Retention",
-      content: `We retain your data:
-• Account data: Until you delete your account
-• Exchange records: 3 years for legal compliance
-• Verification documents: Deleted immediately after review
-• Messages: 2 years or until account deletion
-• Activity logs: 1 year`
+      title: "Retention & Deletion",
+      content: `You can delete your account at any time from Settings. Doing so erases your profile and listings. Messages and reviews you exchanged with other members are retained but de-identified, so the other member's conversation and review history stays intact without being linked back to you.`
     },
   ];
 
@@ -96,17 +77,13 @@ We never sell your personal information to third parties.`
               <Shield className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold text-slate-900 mb-4">Privacy Policy</h1>
-            <p className="text-slate-600 mb-4">Last updated: February 2026</p>
-            <div className="flex justify-center gap-2">
-              <Badge className="bg-blue-100 text-blue-700">GDPR Compliant</Badge>
-              <Badge className="bg-green-100 text-green-700">CCPA Compliant</Badge>
-            </div>
+            <p className="text-slate-600 mb-4">Effective: July 2026</p>
           </div>
 
           <Card className="border-emerald-200 bg-emerald-50 mb-8">
             <CardContent className="p-6">
               <p className="text-emerald-800 font-medium">
-                Your privacy is important to us. This policy explains how Neighbourly Exchange collects, uses, and protects your personal information.
+                Neighbourly Exchange is free to use, with no ads and no tracking. This policy explains what information we collect, how it's used, and how location privacy works.
               </p>
             </CardContent>
           </Card>
@@ -139,28 +116,12 @@ We never sell your personal information to third parties.`
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="p-2 bg-emerald-50 rounded-lg">
-                    <Bell className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-slate-800 mb-3">Cookies & Tracking</h2>
-                    <p className="text-slate-600 leading-relaxed">
-                      We use essential cookies for platform functionality and optional analytics cookies to improve our services. You can manage cookie preferences in your browser settings.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-slate-100">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="p-2 bg-emerald-50 rounded-lg">
                     <UserCheck className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-slate-800 mb-3">Children's Privacy</h2>
+                    <h2 className="text-xl font-semibold text-slate-800 mb-3">Your Rights</h2>
                     <p className="text-slate-600 leading-relaxed">
-                      Our Platform is not intended for users under 18 years of age. We do not knowingly collect personal information from children. If you believe a child has provided us with personal information, please contact us.
+                      You can access and correct your information at any time from your profile and settings. You can delete your data by deleting your account, as described above. For questions about exercising these rights, contact us at [PLACEHOLDER — CONTACT EMAIL].
                     </p>
                   </div>
                 </div>
@@ -174,8 +135,7 @@ We never sell your personal information to third parties.`
                   For privacy-related questions or to exercise your rights:
                 </p>
                 <div className="bg-slate-50 p-4 rounded-lg">
-                  <p className="text-slate-700">Email: privacy@neighbourlyexchange.com</p>
-                  <p className="text-slate-700">Data Protection Officer: dpo@neighbourlyexchange.com</p>
+                  <p className="text-slate-700">Email: [PLACEHOLDER — CONTACT EMAIL]</p>
                 </div>
               </CardContent>
             </Card>
