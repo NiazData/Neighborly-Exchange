@@ -16,6 +16,7 @@ import {
 import { motion } from 'framer-motion';
 import SkillCard from '../components/skills/SkillCard';
 import Seo from '@/components/Seo';
+import { SITE_URL } from '@/lib/siteUrl';
 
 const featuredCategories = [
   { value: 'home_repairs', label: 'Home Repairs', icon: '🔧', color: 'from-orange-400 to-red-500' },
@@ -77,8 +78,8 @@ export default function Home() {
         jsonLd={{
           '@context': 'https://schema.org',
           '@graph': [
-            { '@type': 'Organization', name: 'Neighbourly Exchange', url: 'https://neighbourly-exchange.netlify.app' },
-            { '@type': 'WebSite', name: 'Neighbourly Exchange', url: 'https://neighbourly-exchange.netlify.app' },
+            { '@type': 'Organization', name: 'Neighbourly Exchange', url: SITE_URL },
+            { '@type': 'WebSite', name: 'Neighbourly Exchange', url: SITE_URL },
           ],
         }}
       />

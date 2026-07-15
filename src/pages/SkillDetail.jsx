@@ -32,6 +32,7 @@ import {
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import Seo from '@/components/Seo';
+import { SITE_URL } from '@/lib/siteUrl';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -40,8 +41,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-
-const SITE_URL = 'https://neighbourly-exchange.netlify.app';
 
 const categoryIcons = {
   home_repairs: '🔧', technology: '💻', teaching: '📚', gardening: '🌱',

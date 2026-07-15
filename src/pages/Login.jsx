@@ -60,7 +60,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-emerald-50 to-white p-4">
-      <Seo title="Log In" noindex />
+      <Seo title="Log In" path="/login" noindex />
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Link to="/" className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600">

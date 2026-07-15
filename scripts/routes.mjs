@@ -1,9 +1,9 @@
 // Public, prerenderable routes: [path, title, description]
 export const ROUTES = [
   ['/', 'Neighbourly Exchange — Exchange Skills with Your Neighbors',
-   'Connect with neighbors to share skills, services, and favors. No money needed — just skills and kindness.'],
+   'Neighbourly Exchange connects you with neighbors to swap skills, services, and favors — no money needed. Verified members, tracked exchanges, honest reviews.'],
   ['/Explore', 'Explore Skills | Neighbourly Exchange',
-   'Browse skills your neighbors are offering and requesting on Neighbourly Exchange.'],
+   'Browse skills your neighbors on Neighbourly Exchange are offering and requesting — home repairs, tutoring, gardening, cooking, and more.'],
   ['/Terms', 'Terms of Service | Neighbourly Exchange',
    'The terms that govern using Neighbourly Exchange.'],
   ['/Privacy', 'Privacy Policy | Neighbourly Exchange',
@@ -11,4 +11,5 @@ export const ROUTES = [
   ['/Legal', 'Legal Notice | Neighbourly Exchange',
    'Legal information about the Neighbourly Exchange platform.'],
 ];
-export const BASE_URL = process.env.URL || 'https://neighbourly-exchange.netlify.app';
+// Set VITE_SITE_URL in Netlify env to keep client and prerender URLs in lockstep on a custom domain.
+export const BASE_URL = process.env.VITE_SITE_URL || process.env.URL || 'https://neighbourly-exchange.netlify.app';

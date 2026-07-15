@@ -123,7 +123,7 @@ export default function Exchanges() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
-      <Seo title="My Exchanges" noindex />
+      <Seo title="My Exchanges" path="/Exchanges" noindex />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
