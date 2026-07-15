@@ -100,7 +100,7 @@ We never sell your personal information to third parties.`
           <Card className="border-emerald-200 bg-emerald-50 mb-8">
             <CardContent className="p-6">
               <p className="text-emerald-800 font-medium">
-                Your privacy is important to us. This policy explains how NeighborSkill collects, uses, and protects your personal information.
+                Your privacy is important to us. This policy explains how Neighbourly Exchange collects, uses, and protects your personal information.
               </p>
             </CardContent>
           </Card>
@@ -168,8 +168,8 @@ We never sell your personal information to third parties.`
                   For privacy-related questions or to exercise your rights:
                 </p>
                 <div className="bg-slate-50 p-4 rounded-lg">
-                  <p className="text-slate-700">Email: privacy@neighborskill.com</p>
-                  <p className="text-slate-700">Data Protection Officer: dpo@neighborskill.com</p>
+                  <p className="text-slate-700">Email: privacy@neighbourlyexchange.com</p>
+                  <p className="text-slate-700">Data Protection Officer: dpo@neighbourlyexchange.com</p>
                 </div>
               </CardContent>
             </Card>

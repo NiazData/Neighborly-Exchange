@@ -200,7 +200,7 @@ export default function Profile() {
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-slate-900 flex items-center justify-center gap-1">
-                    {user.average_rating?.toFixed(1) || '0.0'}
+                    {Number(user.rating_avg ?? 0).toFixed(1)}
                     <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
                   </div>
                   <div className="text-sm text-slate-500">Rating</div>

@@ -154,7 +154,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-shadow">
                 <Users className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-xl text-slate-800 hidden sm:block">NeighborSkill</span>
+              <span className="font-bold text-xl text-slate-800 hidden sm:block">Neighbourly Exchange</span>
             </Link>
 
             {/* Desktop Nav */}
@@ -294,7 +294,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <Users className="w-4 h-4 text-white" />
               </div>
-              <span className="font-semibold text-slate-700">NeighborSkill</span>
+              <span className="font-semibold text-slate-700">Neighbourly Exchange</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-slate-500">
               <Link to={createPageUrl('Terms')} className="hover:text-emerald-600 transition-colors">
@@ -307,7 +307,7 @@ export default function Layout({ children, currentPageName }) {
                 Legal
               </Link>
             </div>
-            <p className="text-sm text-slate-400">© 2026 NeighborSkill</p>
+            <p className="text-sm text-slate-400">© 2026 Neighbourly Exchange</p>
           </div>
         </div>
       </footer>

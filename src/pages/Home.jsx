@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { Skill } from '@/api/entities';
 import { auth } from '@/api/auth';
+import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,13 +15,6 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SkillCard from '../components/skills/SkillCard';
-
-const stats = [
-  { label: 'Active Members', value: '2,500+', icon: Users },
-  { label: 'Skills Exchanged', value: '15,000+', icon: ArrowRightLeft },
-  { label: 'Verified Users', value: '1,800+', icon: Shield },
-  { label: 'Average Rating', value: '4.8', icon: Star },
-];
 
 const featuredCategories = [
   { value: 'home_repairs', label: 'Home Repairs', icon: '🔧', color: 'from-orange-400 to-red-500' },
@@ -50,6 +44,22 @@ export default function Home() {
     queryKey: ['recentSkills'],
     queryFn: () => Skill.filter({ status: 'active' }, '-created_date', 6),
   });
+
+  const { data: stats } = useQuery({
+    queryKey: ['publicStats'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_public_stats');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const statsDisplay = [
+    { label: 'Neighbors', value: stats?.members ?? '—', icon: Users },
+    { label: 'Skills Exchanged', value: stats?.exchanges ?? '—', icon: ArrowRightLeft },
+    { label: 'Verified Members', value: stats?.verified ?? '—', icon: Shield },
+    { label: 'Average Rating', value: stats?.avg_rating || '—', icon: Star },
+  ];
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -149,7 +159,7 @@ export default function Home() {
       <section className="py-12 bg-white border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
+            {statsDisplay.map((stat, index) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, y: 20 }}

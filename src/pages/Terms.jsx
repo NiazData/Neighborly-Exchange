@@ -8,7 +8,7 @@ export default function Terms() {
     {
       icon: Users,
       title: "1. Acceptance of Terms",
-      content: `By accessing and using NeighborSkill ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.`
+      content: `By accessing and using Neighbourly Exchange ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.`
     },
     {
       icon: Shield,
@@ -118,7 +118,7 @@ export default function Terms() {
               <CardContent className="p-6">
                 <h2 className="text-xl font-semibold text-slate-800 mb-3">10. Contact Information</h2>
                 <p className="text-slate-600 leading-relaxed">
-                  For questions about these Terms of Service, please contact us at support@neighborskill.com
+                  For questions about these Terms of Service, please contact us at support@neighbourlyexchange.com
                 </p>
               </CardContent>
             </Card>

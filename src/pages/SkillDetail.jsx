@@ -363,14 +363,14 @@ export default function SkillDetail() {
                     </div>
                     <div className="text-center">
                       <div className="text-xl font-bold text-slate-800 flex items-center justify-center gap-1">
-                        {skillOwner?.average_rating?.toFixed(1) || '0.0'}
+                        {Number(skillOwner?.rating_avg ?? 0).toFixed(1)}
                         <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
                       </div>
                       <div className="text-xs text-slate-500">Rating</div>
                     </div>
                     <div className="text-center">
                       <div className="text-xl font-bold text-slate-800">
-                        {skillOwner?.total_reviews || 0}
+                        {skillOwner?.rating_count || 0}
                       </div>
                       <div className="text-xs text-slate-500">Reviews</div>
                     </div>
