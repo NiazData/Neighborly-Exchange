@@ -287,6 +287,11 @@ function SkillsGrid({ skills, onEdit, onDelete, onToggleStatus }) {
                       Paused
                     </Badge>
                   )}
+                  {skill.status === 'hidden' && (
+                    <Badge variant="secondary" className="ml-2 bg-amber-100 text-amber-700">
+                      Hidden by moderator
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 text-xs text-slate-400">
                   <Eye className="w-3.5 h-3.5" />
@@ -312,17 +317,19 @@ function SkillsGrid({ skills, onEdit, onDelete, onToggleStatus }) {
                   <Pencil className="w-4 h-4 mr-1" />
                   Edit
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => onToggleStatus(skill)}
-                >
-                  {skill.status === 'active' ? (
-                    <Pause className="w-4 h-4" />
-                  ) : (
-                    <Play className="w-4 h-4" />
-                  )}
-                </Button>
+                {skill.status !== 'hidden' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onToggleStatus(skill)}
+                  >
+                    {skill.status === 'active' ? (
+                      <Pause className="w-4 h-4" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
+                  </Button>
+                )}
                 <Button 
                   variant="outline" 
                   size="sm"

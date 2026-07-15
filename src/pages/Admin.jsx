@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Skill, Exchange, Report, VerificationRequest, ActivityLog, User } from '@/api/entities';
+import { Skill, Exchange, Report, VerificationRequest, ActivityLog, User, UserWarning } from '@/api/entities';
 import { auth } from '@/api/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +25,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -34,22 +40,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { 
-  Shield, Users, FileText, Flag, Activity, 
+import {
+  Shield, Users, FileText, Flag, Activity,
   CheckCircle, XCircle, Clock, Search, Eye,
-  Ban, Loader2, ArrowRightLeft, UserCheck
+  Ban, Loader2, ArrowRightLeft, UserCheck, MoreVertical,
+  AlertTriangle, EyeOff, ShieldOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 export default function Admin() {
   const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVerification, setSelectedVerification] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [resolutionNotes, setResolutionNotes] = useState('');
-  const [suspendDialog, setSuspendDialog] = useState(null);
+  const [warnDialog, setWarnDialog] = useState(null); // { id, full_name }
+  const [warnReason, setWarnReason] = useState('');
+  const [banDialog, setBanDialog] = useState(null); // { id, full_name }
+  const [banReason, setBanReason] = useState('');
+  const [unbanDialog, setUnbanDialog] = useState(null); // { id, full_name }
+  const [hideSkillDialog, setHideSkillDialog] = useState(null); // skill
+  const [hideReason, setHideReason] = useState('');
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -59,69 +73,73 @@ export default function Admin() {
   const loadUser = async () => {
     try {
       const userData = await auth.me();
-      if (userData.role !== 'admin') {
-        window.location.href = '/';
-        return;
-      }
       setUser(userData);
     } catch (e) {
-      window.location.href = '/';
+      setUser(null);
+    } finally {
+      setAuthChecked(true);
     }
   };
+
+  const isAdmin = !!user?.is_admin;
 
   // Queries
   const { data: allUsers = [] } = useQuery({
     queryKey: ['adminUsers'],
     queryFn: () => User.list('-created_date', 100),
-    enabled: !!user,
+    enabled: isAdmin,
   });
 
   const { data: verificationRequests = [] } = useQuery({
     queryKey: ['verificationRequests'],
     queryFn: () => VerificationRequest.filter({ status: 'pending' }, '-created_date'),
-    enabled: !!user,
+    enabled: isAdmin,
   });
 
   const { data: reports = [] } = useQuery({
     queryKey: ['reports'],
     queryFn: () => Report.filter({ status: 'pending' }, '-created_date'),
-    enabled: !!user,
+    enabled: isAdmin,
   });
 
   const { data: allSkills = [] } = useQuery({
     queryKey: ['adminSkills'],
     queryFn: () => Skill.list('-created_date', 100),
-    enabled: !!user,
+    enabled: isAdmin,
   });
 
   const { data: allExchanges = [] } = useQuery({
     queryKey: ['adminExchanges'],
     queryFn: () => Exchange.list('-created_date', 100),
-    enabled: !!user,
+    enabled: isAdmin,
   });
 
   const { data: activityLogs = [] } = useQuery({
     queryKey: ['activityLogs'],
     queryFn: () => ActivityLog.list('-created_date', 50),
-    enabled: !!user,
+    enabled: isAdmin,
   });
+
+  // Audit log helper — every moderation action writes an activity_logs row.
+  const logAction = (action, targetType, targetId, metadata = {}) =>
+    ActivityLog.create({
+      actor_id: user.id,
+      actor_name: user.full_name,
+      action,
+      target_type: targetType,
+      target_id: targetId,
+      metadata,
+    });
 
   // Mutations
   const approveVerificationMutation = useMutation({
     mutationFn: async (request) => {
       await VerificationRequest.update(request.id, {
         status: 'approved',
-        reviewed_by: user.email,
-        reviewed_date: new Date().toISOString(),
+        reviewed_by: user.id,
       });
-      // Update user as verified
-      const users = await User.filter({ id: request.user_id });
-      if (users[0]) {
-        await User.update(request.user_id, {
-          is_verified: true,
-          verification_date: new Date().toISOString(),
-        });
-      }
+      await User.update(request.user_id, { is_verified: true });
+      await logAction('approve_verification', 'user', request.user_id, { name: request.user_name });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['verificationRequests'] });
@@ -136,9 +154,9 @@ export default function Admin() {
       await VerificationRequest.update(request.id, {
         status: 'rejected',
         rejection_reason: reason,
-        reviewed_by: user.email,
-        reviewed_date: new Date().toISOString(),
+        reviewed_by: user.id,
       });
+      await logAction('reject_verification', 'user', request.user_id, { reason, name: request.user_name });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['verificationRequests'] });
@@ -152,9 +170,10 @@ export default function Admin() {
     mutationFn: async ({ report, status, notes }) => {
       await Report.update(report.id, {
         status,
-        resolution_notes: notes,
-        resolved_by: user.email,
+        admin_notes: notes,
+        resolved_by: user.id,
       });
+      await logAction('resolve_report', 'report', report.id, { status, notes });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports'] });
@@ -164,21 +183,58 @@ export default function Admin() {
     }
   });
 
-  const suspendUserMutation = useMutation({
-    mutationFn: async ({ userId, reason }) => {
-      await User.update(userId, {
-        is_suspended: true,
-        suspension_reason: reason,
-      });
+  const hideSkillMutation = useMutation({
+    mutationFn: async ({ skill, reason }) => {
+      await Skill.update(skill.id, { status: 'hidden' });
+      await logAction('hide_skill', 'skill', skill.id, { reason, title: skill.title });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSkills'] });
+      toast.success('Listing hidden');
+      setHideSkillDialog(null);
+      setHideReason('');
+    },
+  });
+
+  const warnUserMutation = useMutation({
+    mutationFn: async ({ userId, userName, reason }) => {
+      await UserWarning.create({ user_id: userId, admin_id: user.id, reason });
+      await logAction('warn_user', 'user', userId, { reason, name: userName });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
-      toast.success('User suspended');
-      setSuspendDialog(null);
-    }
+      toast.success('Warning issued');
+      setWarnDialog(null);
+      setWarnReason('');
+    },
   });
 
-  const filteredUsers = allUsers.filter(u => 
+  const banUserMutation = useMutation({
+    mutationFn: async ({ userId, userName, reason }) => {
+      await User.update(userId, { is_suspended: true });
+      await logAction('ban_user', 'user', userId, { reason, name: userName });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      toast.success('User banned');
+      setBanDialog(null);
+      setBanReason('');
+    },
+  });
+
+  const unbanUserMutation = useMutation({
+    mutationFn: async (userId) => {
+      await User.update(userId, { is_suspended: false });
+      await logAction('unban_user', 'user', userId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      toast.success('User unbanned');
+      setUnbanDialog(null);
+    },
+  });
+
+  const filteredUsers = allUsers.filter(u =>
     u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -193,10 +249,28 @@ export default function Admin() {
     pendingReports: reports.length,
   };
 
-  if (!user) {
+  if (!authChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <Card className="max-w-md w-full border-red-200">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
+              <ShieldOff className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Access Denied</h2>
+            <p className="text-slate-600">
+              You don't have permission to view this page. Admin access is required.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -243,6 +317,9 @@ export default function Admin() {
             <TabsTrigger value="users" className="rounded-lg px-4">
               Users
             </TabsTrigger>
+            <TabsTrigger value="skills" className="rounded-lg px-4">
+              Skills
+            </TabsTrigger>
             <TabsTrigger value="activity" className="rounded-lg px-4">
               Activity Log
             </TabsTrigger>
@@ -258,8 +335,8 @@ export default function Admin() {
                 {verificationRequests.length > 0 ? (
                   <div className="space-y-4">
                     {verificationRequests.map((request) => (
-                      <div 
-                        key={request.id} 
+                      <div
+                        key={request.id}
                         className="flex items-center justify-between p-4 bg-slate-50 rounded-lg"
                       >
                         <div className="flex items-center gap-4">
@@ -277,8 +354,8 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline">{request.id_type?.replace('_', ' ')}</Badge>
-                          <Button 
+                          <Badge variant="outline">{request.kind === 'profile' ? 'Profile' : request.id_type?.replace('_', ' ')}</Badge>
+                          <Button
                             size="sm"
                             variant="outline"
                             onClick={() => setSelectedVerification(request)}
@@ -310,8 +387,8 @@ export default function Admin() {
                 {reports.length > 0 ? (
                   <div className="space-y-4">
                     {reports.map((report) => (
-                      <div 
-                        key={report.id} 
+                      <div
+                        key={report.id}
                         className="flex items-center justify-between p-4 bg-red-50 rounded-lg"
                       >
                         <div>
@@ -330,7 +407,7 @@ export default function Admin() {
                             {report.description?.substring(0, 100)}...
                           </p>
                         </div>
-                        <Button 
+                        <Button
                           size="sm"
                           variant="outline"
                           onClick={() => setSelectedReport(report)}
@@ -397,15 +474,20 @@ export default function Admin() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-1">
+                            <div className="flex flex-wrap gap-1 items-center">
                               {u.is_verified && (
                                 <Badge className="bg-blue-100 text-blue-700">Verified</Badge>
                               )}
                               {u.is_suspended && (
-                                <Badge className="bg-red-100 text-red-700">Suspended</Badge>
+                                <Badge className="bg-red-100 text-red-700">Banned</Badge>
                               )}
-                              {u.role === 'admin' && (
+                              {u.is_admin && (
                                 <Badge className="bg-amber-100 text-amber-700">Admin</Badge>
+                              )}
+                              {u.warnings_count > 0 && (
+                                <Badge variant="outline" className="text-amber-700 border-amber-300">
+                                  {u.warnings_count} warning{u.warnings_count === 1 ? '' : 's'}
+                                </Badge>
                               )}
                             </div>
                           </TableCell>
@@ -414,20 +496,100 @@ export default function Admin() {
                           </TableCell>
                           <TableCell>{u.total_exchanges || 0}</TableCell>
                           <TableCell>
-                            {!u.is_suspended && u.role !== 'admin' && (
-                              <Button 
-                                size="sm" 
+                            {!u.is_admin && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => setWarnDialog(u)}>
+                                    <AlertTriangle className="w-4 h-4 mr-2 text-amber-600" />
+                                    Warn user…
+                                  </DropdownMenuItem>
+                                  {u.is_suspended ? (
+                                    <DropdownMenuItem onClick={() => setUnbanDialog(u)}>
+                                      <UserCheck className="w-4 h-4 mr-2 text-emerald-600" />
+                                      Unban user
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem onClick={() => setBanDialog(u)}>
+                                      <Ban className="w-4 h-4 mr-2 text-red-600" />
+                                      Ban user…
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Skills Tab */}
+          <TabsContent value="skills">
+            <Card className="border-slate-100">
+              <CardHeader>
+                <CardTitle>Skill Listings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Listing</TableHead>
+                        <TableHead>Owner</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Posted</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allSkills.map((skill) => (
+                        <TableRow key={skill.id}>
+                          <TableCell>
+                            <p className="font-medium">{skill.title}</p>
+                            <p className="text-sm text-slate-500 line-clamp-1">{skill.description}</p>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-600">{skill.user_name}</TableCell>
+                          <TableCell>
+                            {skill.status === 'hidden' ? (
+                              <Badge className="bg-amber-100 text-amber-700">Hidden</Badge>
+                            ) : (
+                              <Badge variant="outline" className="capitalize">{skill.status}</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(skill.created_date), 'MMM d, yyyy')}
+                          </TableCell>
+                          <TableCell>
+                            {skill.status !== 'hidden' && (
+                              <Button
+                                size="sm"
                                 variant="outline"
-                                className="text-red-600"
-                                onClick={() => setSuspendDialog(u)}
+                                className="text-amber-600"
+                                onClick={() => setHideSkillDialog(skill)}
                               >
-                                <Ban className="w-4 h-4 mr-1" />
-                                Suspend
+                                <EyeOff className="w-4 h-4 mr-1" />
+                                Hide listing…
                               </Button>
                             )}
                           </TableCell>
                         </TableRow>
                       ))}
+                      {allSkills.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-12 text-slate-500">
+                            No skill listings yet
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </ScrollArea>
@@ -447,19 +609,19 @@ export default function Admin() {
                     {activityLogs.map((log) => (
                       <div key={log.id} className="flex items-center gap-4 p-3 bg-slate-50 rounded-lg">
                         <div className={`p-2 rounded-lg ${
-                          log.action_type.includes('delete') ? 'bg-red-100' :
-                          log.action_type.includes('create') || log.action_type.includes('complete') ? 'bg-emerald-100' :
+                          log.action.includes('ban') || log.action.includes('reject') ? 'bg-red-100' :
+                          log.action.includes('approve') || log.action.includes('unban') ? 'bg-emerald-100' :
                           'bg-blue-100'
                         }`}>
                           <Activity className={`w-4 h-4 ${
-                            log.action_type.includes('delete') ? 'text-red-600' :
-                            log.action_type.includes('create') || log.action_type.includes('complete') ? 'text-emerald-600' :
+                            log.action.includes('ban') || log.action.includes('reject') ? 'text-red-600' :
+                            log.action.includes('approve') || log.action.includes('unban') ? 'text-emerald-600' :
                             'text-blue-600'
                           }`} />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-slate-700">{log.action_type.replace(/_/g, ' ')}</p>
-                          <p className="text-xs text-slate-500">{log.user_email}</p>
+                          <p className="text-sm font-medium text-slate-700">{log.action.replace(/_/g, ' ')}</p>
+                          <p className="text-xs text-slate-500">{log.actor_name}</p>
                         </div>
                         <p className="text-xs text-slate-400">
                           {format(new Date(log.created_date), 'MMM d, h:mm a')}
@@ -496,38 +658,50 @@ export default function Admin() {
                     <p className="text-sm text-slate-500 mb-1">Email</p>
                     <p className="font-medium">{selectedVerification.user_email}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-slate-500 mb-1">ID Type</p>
-                    <p className="font-medium">{selectedVerification.id_type?.replace('_', ' ')}</p>
-                  </div>
+                  {selectedVerification.kind !== 'profile' && (
+                    <div>
+                      <p className="text-sm text-slate-500 mb-1">ID Type</p>
+                      <p className="font-medium">{selectedVerification.id_type?.replace('_', ' ')}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm text-slate-500 mb-1">Submitted</p>
                     <p className="font-medium">{format(new Date(selectedVerification.created_date), 'MMM d, yyyy h:mm a')}</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-slate-500 mb-2">ID Document</p>
-                    <a href={selectedVerification.id_document_url} target="_blank" rel="noopener noreferrer">
-                      <img 
-                        src={selectedVerification.id_document_url} 
-                        alt="ID Document" 
-                        className="w-full h-48 object-cover rounded-lg border border-slate-200"
-                      />
-                    </a>
+                {selectedVerification.id_document_url || selectedVerification.selfie_url ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedVerification.id_document_url && (
+                      <div>
+                        <p className="text-sm text-slate-500 mb-2">ID Document</p>
+                        <a href={selectedVerification.id_document_url} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={selectedVerification.id_document_url}
+                            alt="ID Document"
+                            className="w-full h-48 object-cover rounded-lg border border-slate-200"
+                          />
+                        </a>
+                      </div>
+                    )}
+                    {selectedVerification.selfie_url && (
+                      <div>
+                        <p className="text-sm text-slate-500 mb-2">Selfie</p>
+                        <a href={selectedVerification.selfie_url} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={selectedVerification.selfie_url}
+                            alt="Selfie"
+                            className="w-full h-48 object-cover rounded-lg border border-slate-200"
+                          />
+                        </a>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <p className="text-sm text-slate-500 mb-2">Selfie</p>
-                    <a href={selectedVerification.selfie_url} target="_blank" rel="noopener noreferrer">
-                      <img 
-                        src={selectedVerification.selfie_url} 
-                        alt="Selfie" 
-                        className="w-full h-48 object-cover rounded-lg border border-slate-200"
-                      />
-                    </a>
+                ) : (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                    Profile-completeness verification — check the user's profile is complete before approving.
                   </div>
-                </div>
+                )}
 
                 <div>
                   <p className="text-sm text-slate-500 mb-2">Rejection Reason (if rejecting)</p>
@@ -540,26 +714,26 @@ export default function Admin() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1"
                     onClick={() => setSelectedVerification(null)}
                   >
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     variant="outline"
                     className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                    onClick={() => rejectVerificationMutation.mutate({ 
-                      request: selectedVerification, 
-                      reason: rejectionReason 
+                    onClick={() => rejectVerificationMutation.mutate({
+                      request: selectedVerification,
+                      reason: rejectionReason
                     })}
                     disabled={!rejectionReason.trim()}
                   >
                     <XCircle className="w-4 h-4 mr-2" />
                     Reject
                   </Button>
-                  <Button 
+                  <Button
                     className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                     onClick={() => approveVerificationMutation.mutate(selectedVerification)}
                   >
@@ -596,6 +770,46 @@ export default function Admin() {
                   </div>
                 </div>
 
+                {/* Quick moderation actions */}
+                <div className="flex flex-wrap gap-2">
+                  {selectedReport.reported_content_type === 'skill' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-amber-600"
+                      onClick={() => hideSkillMutation.mutate({
+                        skill: { id: selectedReport.reported_content_id, title: selectedReport.reported_user_name },
+                        reason: `Reported: ${selectedReport.reason}`,
+                      })}
+                    >
+                      <EyeOff className="w-4 h-4 mr-1" />
+                      Hide reported skill
+                    </Button>
+                  )}
+                  {selectedReport.reported_user_id && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-amber-600"
+                        onClick={() => setWarnDialog({ id: selectedReport.reported_user_id, full_name: selectedReport.reported_user_name })}
+                      >
+                        <AlertTriangle className="w-4 h-4 mr-1" />
+                        Warn user
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600"
+                        onClick={() => setBanDialog({ id: selectedReport.reported_user_id, full_name: selectedReport.reported_user_name })}
+                      >
+                        <Ban className="w-4 h-4 mr-1" />
+                        Ban user
+                      </Button>
+                    </>
+                  )}
+                </div>
+
                 <div>
                   <p className="text-sm text-slate-500 mb-2">Resolution Notes</p>
                   <Textarea
@@ -607,7 +821,7 @@ export default function Admin() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button 
+                  <Button
                     variant="outline"
                     className="flex-1"
                     onClick={() => resolveReportMutation.mutate({
@@ -618,7 +832,7 @@ export default function Admin() {
                   >
                     Dismiss
                   </Button>
-                  <Button 
+                  <Button
                     className="flex-1 bg-amber-600 hover:bg-amber-700"
                     onClick={() => resolveReportMutation.mutate({
                       report: selectedReport,
@@ -626,7 +840,7 @@ export default function Admin() {
                       notes: resolutionNotes
                     })}
                   >
-                    Resolve & Warn User
+                    Resolve
                   </Button>
                 </div>
               </div>
@@ -634,25 +848,114 @@ export default function Admin() {
           </DialogContent>
         </Dialog>
 
-        {/* Suspend User Dialog */}
-        <AlertDialog open={!!suspendDialog} onOpenChange={() => setSuspendDialog(null)}>
+        {/* Warn User Dialog */}
+        <AlertDialog open={!!warnDialog} onOpenChange={(open) => { if (!open) { setWarnDialog(null); setWarnReason(''); } }}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Suspend User</AlertDialogTitle>
+              <AlertDialogTitle>Warn User</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to suspend {suspendDialog?.full_name}? They will not be able to access the platform until unsuspended.
+                Issue a warning to {warnDialog?.full_name}. This will be visible to them on their Settings page.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <Textarea
+              placeholder="Reason for this warning..."
+              value={warnReason}
+              onChange={(e) => setWarnReason(e.target.value)}
+              rows={3}
+            />
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setWarnReason('')}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-amber-600 hover:bg-amber-700"
+                disabled={!warnReason.trim()}
+                onClick={() => warnUserMutation.mutate({
+                  userId: warnDialog.id,
+                  userName: warnDialog.full_name,
+                  reason: warnReason,
+                })}
+              >
+                Issue Warning
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Ban User Dialog */}
+        <AlertDialog open={!!banDialog} onOpenChange={(open) => { if (!open) { setBanDialog(null); setBanReason(''); } }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Ban User</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to ban {banDialog?.full_name}? They will be signed out immediately and their listings will be hidden.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <Textarea
+              placeholder="Reason for this ban..."
+              value={banReason}
+              onChange={(e) => setBanReason(e.target.value)}
+              rows={3}
+            />
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setBanReason('')}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                disabled={!banReason.trim()}
+                onClick={() => banUserMutation.mutate({
+                  userId: banDialog.id,
+                  userName: banDialog.full_name,
+                  reason: banReason,
+                })}
+              >
+                Ban User
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Unban User Dialog */}
+        <AlertDialog open={!!unbanDialog} onOpenChange={() => setUnbanDialog(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Unban User</AlertDialogTitle>
+              <AlertDialogDescription>
+                Restore platform access for {unbanDialog?.full_name}?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-red-600 hover:bg-red-700"
-                onClick={() => suspendUserMutation.mutate({ 
-                  userId: suspendDialog.id, 
-                  reason: 'Suspended by admin' 
-                })}
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => unbanUserMutation.mutate(unbanDialog.id)}
               >
-                Suspend User
+                Unban User
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Hide Skill Dialog */}
+        <AlertDialog open={!!hideSkillDialog} onOpenChange={(open) => { if (!open) { setHideSkillDialog(null); setHideReason(''); } }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hide Listing</AlertDialogTitle>
+              <AlertDialogDescription>
+                Hide "{hideSkillDialog?.title}"? The owner will still see it in My Skills, marked as hidden by a moderator.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <Textarea
+              placeholder="Reason for hiding this listing..."
+              value={hideReason}
+              onChange={(e) => setHideReason(e.target.value)}
+              rows={3}
+            />
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setHideReason('')}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-amber-600 hover:bg-amber-700"
+                disabled={!hideReason.trim()}
+                onClick={() => hideSkillMutation.mutate({ skill: hideSkillDialog, reason: hideReason })}
+              >
+                Hide Listing
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

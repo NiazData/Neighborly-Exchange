@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { auth } from '@/api/auth';
+import { UserWarning } from '@/api/entities';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -13,9 +16,10 @@ import {
 } from '@/components/ui/select';
 
 
-import { Globe, Bell, Shield, LogOut, Loader2 } from 'lucide-react';
+import { Globe, Bell, Shield, LogOut, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { format } from 'date-fns';
 
 const languages = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -75,6 +79,12 @@ export default function Settings() {
     auth.logout();
   };
 
+  const { data: warnings = [] } = useQuery({
+    queryKey: ['myWarnings', user?.id],
+    queryFn: () => UserWarning.filter({ user_id: user.id }, '-created_date'),
+    enabled: !!user?.id,
+  });
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -92,6 +102,46 @@ export default function Settings() {
         </div>
 
         <div className="space-y-6">
+          {/* Account Standing */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className="border-slate-100">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-emerald-600" />
+                  Account Standing
+                </CardTitle>
+                <CardDescription>Warnings issued by moderators appear here</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {warnings.length === 0 ? (
+                  <Alert className="border-emerald-200 bg-emerald-50">
+                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <AlertDescription className="text-emerald-800">
+                      Your account is in good standing.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="space-y-3">
+                    {warnings.map((warning) => (
+                      <Alert key={warning.id} className="border-amber-200 bg-amber-50">
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <AlertDescription className="text-amber-800">
+                          <span className="block font-medium">
+                            {format(new Date(warning.created_date), 'MMM d, yyyy')}
+                          </span>
+                          <span>{warning.reason}</span>
+                        </AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+
           {/* Language Settings */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
