@@ -20,6 +20,7 @@ import { Plus, Pencil, Trash2, Eye, Pause, Play, HandHeart, Search } from 'lucid
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import SkillForm from '../components/skills/SkillForm';
+import Seo from '@/components/Seo';
 
 export default function MySkills() {
   const [user, setUser] = useState(null);
@@ -124,6 +125,7 @@ export default function MySkills() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+      <Seo title="My Skills" noindex />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">

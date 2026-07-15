@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Users, Loader2, Mail } from 'lucide-react';
+import Seo from '@/components/Seo';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -59,6 +60,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-emerald-50 to-white p-4">
+      <Seo title="Log In" noindex />
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Link to="/" className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600">

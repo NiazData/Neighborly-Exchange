@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, MessageSquare, ArrowLeft, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import Seo from '@/components/Seo';
 
 export default function Messages() {
   const params = new URLSearchParams(window.location.search);
@@ -149,6 +150,7 @@ export default function Messages() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+      <Seo title="Messages" noindex />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-900">Messages</h1>

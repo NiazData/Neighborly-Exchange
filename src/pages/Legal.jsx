@@ -2,10 +2,16 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Scale, Building, FileText, AlertCircle, Globe, Gavel } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Seo from '@/components/Seo';
 
 export default function Legal() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+      <Seo
+        title="Legal Notice"
+        path="/Legal"
+        description="Legal information about the Neighbourly Exchange platform."
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

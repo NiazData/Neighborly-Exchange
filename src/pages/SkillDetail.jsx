@@ -31,6 +31,17 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import Seo from '@/components/Seo';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+
+const SITE_URL = 'https://neighbourly-exchange.netlify.app';
 
 const categoryIcons = {
   home_repairs: '🔧', technology: '💻', teaching: '📚', gardening: '🌱',
@@ -189,9 +200,55 @@ export default function SkillDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+      <Seo
+        title={skill.title}
+        path={`/SkillDetail?id=${skill.id}`}
+        description={`${skill.title} — a ${skill.type} on Neighbourly Exchange in ${skill.location?.city || 'your area'}.`}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'Service',
+              name: skill.title,
+              description: skill.description,
+              areaServed: skill.location?.city,
+              provider: { '@type': 'Person', name: skill.user_name },
+            },
+            {
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+                { '@type': 'ListItem', position: 2, name: 'Explore', item: `${SITE_URL}/Explore` },
+                { '@type': 'ListItem', position: 3, name: skill.title, item: `${SITE_URL}/SkillDetail?id=${skill.id}` },
+              ],
+            },
+          ],
+        }}
+      />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb */}
+        <Breadcrumb className="mb-4">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/">Home</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to={createPageUrl('Explore')}>Explore</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{skill.title}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
         {/* Back Button */}
-        <Button 
+        <Button
           variant="ghost" 
           className="mb-6"
           onClick={() => navigate(-1)}

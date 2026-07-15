@@ -17,6 +17,7 @@ import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SkillCard from '../components/skills/SkillCard';
 import CategoryFilter from '../components/skills/CategoryFilter';
+import Seo from '@/components/Seo';
 
 export default function Explore() {
   const location = useLocation();
@@ -57,6 +58,11 @@ export default function Explore() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+      <Seo
+        title="Explore Skills"
+        path="/Explore"
+        description="Browse skills your neighbors on Neighbourly Exchange are offering and requesting — home repairs, tutoring, gardening, cooking, and more."
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">

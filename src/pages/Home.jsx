@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SkillCard from '../components/skills/SkillCard';
+import Seo from '@/components/Seo';
 
 const featuredCategories = [
   { value: 'home_repairs', label: 'Home Repairs', icon: '🔧', color: 'from-orange-400 to-red-500' },
@@ -70,6 +71,17 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      <Seo
+        path="/"
+        description="Neighbourly Exchange connects you with neighbors to swap skills, services, and favors — no money needed. Verified members, tracked exchanges, honest reviews."
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@graph': [
+            { '@type': 'Organization', name: 'Neighbourly Exchange', url: 'https://neighbourly-exchange.netlify.app' },
+            { '@type': 'WebSite', name: 'Neighbourly Exchange', url: 'https://neighbourly-exchange.netlify.app' },
+          ],
+        }}
+      />
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50" />

@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Eye, Database, Lock, Globe, Trash2, Bell, UserCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Seo from '@/components/Seo';
 
 export default function Privacy() {
   const sections = [
@@ -80,6 +81,11 @@ We never sell your personal information to third parties.`
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+      <Seo
+        title="Privacy Policy"
+        path="/Privacy"
+        description="How Neighbourly Exchange collects, uses, and protects your data."
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { FileText, Scale, Shield, Users, AlertTriangle, Ban } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Seo from '@/components/Seo';
 
 export default function Terms() {
   const sections = [
@@ -50,6 +51,11 @@ export default function Terms() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+      <Seo
+        title="Terms of Service"
+        path="/Terms"
+        description="The terms that govern using Neighbourly Exchange."
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

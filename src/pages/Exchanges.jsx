@@ -9,6 +9,7 @@ import { Clock, CheckCircle, ArrowRightLeft, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import ExchangeCard from '../components/exchange/ExchangeCard';
 import ReviewForm from '../components/reviews/ReviewForm';
+import Seo from '@/components/Seo';
 
 export default function Exchanges() {
   const [user, setUser] = useState(null);
@@ -122,6 +123,7 @@ export default function Exchanges() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+      <Seo title="My Exchanges" noindex />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">

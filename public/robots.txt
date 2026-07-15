@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /MySkills
+Disallow: /Exchanges
+Disallow: /Messages
+Disallow: /NearbyMap
+Disallow: /Profile
+Disallow: /Settings
+Disallow: /Verification
+Disallow: /Admin
+Disallow: /UserProfile
+Disallow: /login
+Disallow: /suspended
+Sitemap: https://neighbourly-exchange.netlify.app/sitemap.xml
