@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Exchange, Message } from '@/api/entities';
 import { auth } from '@/api/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -66,6 +67,24 @@ export default function Messages() {
     enabled: !!selectedExchange?.id,
     refetchInterval: 5000,
   });
+
+  useEffect(() => {
+    if (!selectedExchange?.id) return;
+    const channel = supabase
+      .channel(`messages-${selectedExchange.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `exchange_id=eq.${selectedExchange.id}`,
+        },
+        () => queryClient.invalidateQueries(['messages', selectedExchange.id]),
+      )
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [selectedExchange?.id, queryClient]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
