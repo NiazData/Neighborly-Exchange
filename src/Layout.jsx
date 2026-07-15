@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 
 const translations = {
   en: {
@@ -80,6 +81,7 @@ const translations = {
 };
 
 export default function Layout({ children, currentPageName }) {
+  useSessionTimeout();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);

@@ -14,9 +14,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { supabase } from '@/lib/supabase';
 
-
-import { Globe, Bell, Shield, LogOut, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Globe, Bell, Shield, LogOut, Loader2, CheckCircle, AlertTriangle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
@@ -47,6 +59,8 @@ export default function Settings() {
     show_phone: false,
   });
   const [saving, setSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -78,6 +92,19 @@ export default function Settings() {
 
   const handleLogout = () => {
     auth.logout();
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase.rpc('delete_my_account');
+      if (error) throw error;
+      await supabase.auth.signOut();
+      window.location.assign('/');
+    } catch (error) {
+      toast.error(error.message || 'Account deletion failed');
+      setDeleting(false);
+    }
   };
 
   const { data: warnings = [] } = useQuery({
@@ -284,14 +311,64 @@ export default function Settings() {
                     <p className="font-medium text-red-800">Log Out</p>
                     <p className="text-sm text-red-600">Sign out of your account</p>
                   </div>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="border-red-300 text-red-600 hover:bg-red-100"
                     onClick={handleLogout}
                   >
                     <LogOut className="w-4 h-4 mr-2" />
                     Log Out
                   </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-red-800">Delete Account</p>
+                    <p className="text-sm text-red-600">Permanently delete your account and data</p>
+                  </div>
+                  <AlertDialog onOpenChange={(open) => { if (!open) setDeleteConfirm(''); }}>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" className="bg-red-600 hover:bg-red-700">
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Account
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This permanently deletes your account, profile, and listings.
+                          Your past messages and reviews are kept for the other
+                          participant but de-identified. This cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <div className="space-y-2 py-2">
+                        <Label htmlFor="delete-confirm" className="text-sm text-slate-600">
+                          Type <span className="font-mono font-semibold">DELETE</span> to confirm
+                        </Label>
+                        <Input
+                          id="delete-confirm"
+                          value={deleteConfirm}
+                          onChange={(e) => setDeleteConfirm(e.target.value)}
+                          placeholder="DELETE"
+                          autoComplete="off"
+                        />
+                      </div>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          disabled={deleteConfirm !== 'DELETE' || deleting}
+                          className="bg-red-600 hover:bg-red-700"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleDeleteAccount();
+                          }}
+                        >
+                          {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete my account'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardContent>
             </Card>

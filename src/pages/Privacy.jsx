@@ -12,6 +12,7 @@ export default function Privacy() {
       content: `We collect information you provide directly:
 • Account email
 • The profile information you write (bio, photo, skills)
+• Phone number (optional — only if you choose to add it; you control whether it is shown to other members via Settings)
 • Listings you create
 • Exchange records (who you exchanged with, and when)
 • Messages you send to other members
@@ -41,7 +42,9 @@ We do not collect payment information — the Platform is free and does not proc
 • Supabase — database, authentication, and file storage
 • Netlify — hosting
 
-We do not use advertising trackers, we do not sell your data, and we do not use analytics cookies. Your information is not shared with anyone beyond these processors, other members (as part of using the Platform), and moderators reviewing a report.`
+We do not use advertising trackers, we do not sell your data, and we do not use analytics cookies. Your information is not shared with anyone beyond these processors, other members (as part of using the Platform), and moderators reviewing a report.
+
+The interactive map loads its map imagery from OpenStreetMap. Like any web request, OpenStreetMap's servers receive your IP address when tiles load; no profile data is ever sent to them.`
     },
     {
       icon: Bell,
