@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { Skill } from '@/api/entities';
 import { auth } from '@/api/auth';
 import { useQuery } from '@tanstack/react-query';
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import SkillsMap from '@/components/map/SkillsMap';
+import { distanceKm, formatDistance } from '@/lib/geo';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,17 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MapPin, Navigation, CheckCircle, Loader2 } from 'lucide-react';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-
-// Fix leaflet marker icons
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+import { MapPin, CheckCircle, Loader2 } from 'lucide-react';
 
 const categoryIcons = {
   home_repairs: '🔧', technology: '💻', teaching: '📚', gardening: '🌱',
@@ -35,48 +26,33 @@ const categoryIcons = {
 };
 
 export default function NearbyMap() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [userLocation, setUserLocation] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
-  const [loading, setLoading] = useState(true);
-  const [locationError, setLocationError] = useState(null);
 
   useEffect(() => {
     loadUser();
-    getUserLocation();
   }, []);
 
   const loadUser = async () => {
     try {
       const userData = await auth.me();
       setUser(userData);
-      if (userData.location?.lat && userData.location?.lng) {
-        setUserLocation([userData.location.lat, userData.location.lng]);
-      }
-    } catch (e) {}
-  };
-
-  const getUserLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
-          setLoading(false);
-        },
-        (error) => {
-          setLocationError('Unable to get your location. Please enable location services.');
-          // Default to a central location
-          setUserLocation([40.7128, -74.0060]); // NYC
-          setLoading(false);
-        }
-      );
-    } else {
-      setLocationError('Geolocation is not supported by your browser.');
-      setUserLocation([40.7128, -74.0060]);
+    } catch (e) {
+      // not authenticated / no profile yet — empty state below handles it
+    } finally {
       setLoading(false);
     }
   };
+
+  // The map is always centered on the viewer's own (fuzzy) area, never their
+  // exact coordinates — mirrors the privacy guarantee applied to skill pins.
+  const center = user?.fuzzy_lat
+    ? { lat: user.fuzzy_lat, lng: user.fuzzy_lng }
+    : { lat: user?.location?.lat, lng: user?.location?.lng };
+  const hasCenter = Boolean(center.lat && center.lng);
 
   const { data: skills = [] } = useQuery({
     queryKey: ['mapSkills', selectedCategory, selectedType],
@@ -84,34 +60,31 @@ export default function NearbyMap() {
       let filter = { status: 'active' };
       if (selectedCategory !== 'all') filter.category = selectedCategory;
       if (selectedType !== 'all') filter.type = selectedType;
-      
+
       const results = await Skill.filter(filter, '-created_date', 100);
       // Filter skills with location data
-      return results.filter(s => s.location?.lat && s.location?.lng);
+      return results.filter((s) => s.location?.lat && s.location?.lng);
     },
+    enabled: hasCenter,
   });
 
-  // Create custom marker icon
-  const createCustomIcon = (type) => {
-    return L.divIcon({
-      className: 'custom-marker',
-      html: `<div class="w-8 h-8 rounded-full ${
-        type === 'offering' ? 'bg-emerald-500' : 'bg-amber-500'
-      } flex items-center justify-center text-white shadow-lg border-2 border-white">
-        <span class="text-xs font-bold">${type === 'offering' ? 'O' : 'R'}</span>
-      </div>`,
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-      popupAnchor: [0, -32],
-    });
-  };
+  const skillsWithDistance = hasCenter
+    ? skills
+        .map((skill) => ({
+          ...skill,
+          distanceKm: distanceKm(center.lat, center.lng, skill.location.lat, skill.location.lng),
+        }))
+        .sort((a, b) => a.distanceKm - b.distanceKm)
+    : [];
+
+  const goToSkill = (skill) => navigate(createPageUrl(`SkillDetail?id=${skill.id}`));
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-4" />
-          <p className="text-slate-600">Getting your location...</p>
+          <p className="text-slate-600">Loading your area...</p>
         </div>
       </div>
     );
@@ -126,162 +99,116 @@ export default function NearbyMap() {
           <p className="text-slate-600">Find skills and services in your neighborhood</p>
         </div>
 
-        {locationError && (
-          <Card className="mb-6 border-amber-200 bg-amber-50">
-            <CardContent className="p-4 flex items-center gap-3">
-              <MapPin className="w-5 h-5 text-amber-600" />
-              <p className="text-amber-700">{locationError}</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={getUserLocation}
-                className="ml-auto"
-              >
-                <Navigation className="w-4 h-4 mr-2" />
-                Try Again
-              </Button>
+        {!hasCenter ? (
+          <Card className="border-slate-100">
+            <CardContent className="p-8 text-center">
+              <MapPin className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+              <h3 className="font-semibold text-slate-800 mb-1">Set your area to see the map</h3>
+              <p className="text-slate-500 mb-4">
+                Add your location on your profile so we can show skills near you.
+              </p>
+              <Link to={createPageUrl('Profile')}>
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  Set My Location
+                </Button>
+              </Link>
             </CardContent>
           </Card>
-        )}
+        ) : (
+          <>
+            {/* Filters */}
+            <Card className="mb-6 border-slate-100">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="home_repairs">🔧 Home Repairs</SelectItem>
+                      <SelectItem value="technology">💻 Technology</SelectItem>
+                      <SelectItem value="teaching">📚 Teaching</SelectItem>
+                      <SelectItem value="gardening">🌱 Gardening</SelectItem>
+                      <SelectItem value="cooking">🍳 Cooking</SelectItem>
+                      <SelectItem value="pet_care">🐾 Pet Care</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-        {/* Filters */}
-        <Card className="mb-6 border-slate-100">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="home_repairs">🔧 Home Repairs</SelectItem>
-                  <SelectItem value="technology">💻 Technology</SelectItem>
-                  <SelectItem value="teaching">📚 Teaching</SelectItem>
-                  <SelectItem value="gardening">🌱 Gardening</SelectItem>
-                  <SelectItem value="cooking">🍳 Cooking</SelectItem>
-                  <SelectItem value="pet_care">🐾 Pet Care</SelectItem>
-                </SelectContent>
-              </Select>
+                  <Select value={selectedType} onValueChange={setSelectedType}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="offering">Offering</SelectItem>
+                      <SelectItem value="requesting">Requesting</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="offering">Offering</SelectItem>
-                  <SelectItem value="requesting">Requesting</SelectItem>
-                </SelectContent>
-              </Select>
+                  <div className="flex items-center gap-4 text-sm text-slate-500 ml-auto">
+                    <span className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                      Your approximate area
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              <div className="flex items-center gap-4 text-sm text-slate-500 ml-auto">
-                <span className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                  Offering
-                </span>
-                <span className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-amber-500" />
-                  Requesting
-                </span>
+            {/* Map */}
+            <Card className="border-slate-100 overflow-hidden shadow-lg mb-6">
+              <div className="h-[60vh] relative">
+                <SkillsMap center={center} skills={skills} onSkillClick={goToSkill} />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </Card>
 
-        {/* Map */}
-        <Card className="border-slate-100 overflow-hidden shadow-lg">
-          <div className="h-[60vh] relative">
-            {userLocation && (
-              <MapContainer
-                center={userLocation}
-                zoom={13}
-                style={{ height: '100%', width: '100%' }}
-                className="z-0"
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-
-                {/* 5 mile radius circle */}
-                <Circle
-                  center={userLocation}
-                  radius={8047} // 5 miles in meters
-                  pathOptions={{
-                    color: '#10b981',
-                    fillColor: '#10b981',
-                    fillOpacity: 0.1,
-                    weight: 2,
-                  }}
-                />
-
-                {/* User marker */}
-                <Marker position={userLocation}>
-                  <Popup>
-                    <div className="text-center p-2">
-                      <div className="w-10 h-10 mx-auto rounded-full bg-blue-500 flex items-center justify-center mb-2">
-                        <Navigation className="w-5 h-5 text-white" />
+            {/* Nearby skills list */}
+            {skillsWithDistance.length > 0 && (
+              <Card className="border-slate-100">
+                <CardContent className="p-4 divide-y divide-slate-100">
+                  {skillsWithDistance.map((skill) => (
+                    <button
+                      type="button"
+                      key={skill.id}
+                      onClick={() => goToSkill(skill)}
+                      className="w-full flex items-center gap-3 py-3 text-left hover:bg-slate-50 rounded-lg px-2 transition-colors"
+                    >
+                      <span className="text-xl">{categoryIcons[skill.category] || '✨'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-800 truncate">{skill.title}</p>
+                        <p className="text-xs text-slate-500 flex items-center gap-1">
+                          {skill.user_name}
+                          {skill.is_verified_user && (
+                            <CheckCircle className="w-3 h-3 text-blue-500" />
+                          )}
+                        </p>
                       </div>
-                      <p className="font-medium">Your Location</p>
-                    </div>
-                  </Popup>
-                </Marker>
-
-                {/* Skill markers */}
-                {skills.map((skill) => (
-                  <Marker
-                    key={skill.id}
-                    position={[skill.location.lat, skill.location.lng]}
-                  >
-                    <Popup>
-                      <div className="p-2 min-w-[200px]">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xl">{categoryIcons[skill.category]}</span>
-                          <Badge className={`text-xs ${
-                            skill.type === 'offering' 
-                              ? 'bg-emerald-100 text-emerald-700' 
-                              : 'bg-amber-100 text-amber-700'
-                          }`}>
-                            {skill.type === 'offering' ? 'Offering' : 'Requesting'}
-                          </Badge>
-                        </div>
-                        <h3 className="font-semibold text-slate-800 mb-1">{skill.title}</h3>
-                        <p className="text-sm text-slate-500 mb-2">{skill.user_name}</p>
-                        {skill.is_verified_user && (
-                          <div className="flex items-center gap-1 text-xs text-blue-600 mb-2">
-                            <CheckCircle className="w-3 h-3" />
-                            Verified
-                          </div>
-                        )}
-                        <Link to={createPageUrl(`SkillDetail?id=${skill.id}`)}>
-                          <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700">
-                            View Details
-                          </Button>
-                        </Link>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
+                      <Badge
+                        className={
+                          skill.type === 'offering'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }
+                      >
+                        {skill.type === 'offering' ? 'Offering' : 'Requesting'}
+                      </Badge>
+                      <span className="text-sm text-slate-500 whitespace-nowrap">
+                        {formatDistance(skill.distanceKm)} away (approx.)
+                      </span>
+                    </button>
+                  ))}
+                </CardContent>
+              </Card>
             )}
-          </div>
-        </Card>
 
-        {/* Skills Count */}
-        <p className="text-center text-slate-500 mt-4">
-          Showing <span className="font-semibold text-slate-700">{skills.length}</span> skills in your area
-        </p>
+            {/* Skills Count */}
+            <p className="text-center text-slate-500 mt-4">
+              Showing <span className="font-semibold text-slate-700">{skills.length}</span> skills in your area
+            </p>
+          </>
+        )}
       </div>
-
-      <style>{`
-        .custom-marker {
-          background: none;
-          border: none;
-        }
-        .leaflet-popup-content-wrapper {
-          border-radius: 12px;
-        }
-      `}</style>
     </div>
   );
 }

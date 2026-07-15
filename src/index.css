@@ -86,3 +86,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Leaflet map popups (SkillsMap) — keep below dialogs/dropdowns, round to match cards */
+.leaflet-container {
+  z-index: 0;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+}

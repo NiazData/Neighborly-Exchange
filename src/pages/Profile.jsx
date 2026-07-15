@@ -18,9 +18,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { 
-  Pencil, MapPin, Star, CheckCircle, Shield, Camera, 
-  ArrowRightLeft, Loader2
+import {
+  Pencil, MapPin, Star, CheckCircle, Shield, Camera,
+  ArrowRightLeft, Loader2, Navigation
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -32,6 +32,7 @@ export default function Profile() {
   const [editData, setEditData] = useState({});
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [locating, setLocating] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -44,11 +45,37 @@ export default function Profile() {
       setEditData({
         bio: userData.bio || '',
         phone: userData.phone || '',
-        location: userData.location || { address: '', city: '' }
+        location: userData.location || { city: '' }
       });
     } catch (e) {
       auth.redirectToLogin();
     }
+  };
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Your browser does not support location — you can still type your suburb.');
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setEditData((d) => ({
+          ...d,
+          location: {
+            ...(d.location || {}),
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          },
+        }));
+        setLocating(false);
+        toast.success('Location captured!');
+      },
+      () => {
+        setLocating(false);
+        toast.error('Could not read your location — you can still type your suburb.');
+      }
+    );
   };
 
   const { data: mySkills = [] } = useQuery({
@@ -348,29 +375,38 @@ export default function Profile() {
               </div>
 
               <div>
-                <Label>City</Label>
+                <Label>City / Suburb</Label>
                 <Input
-                  placeholder="Your city"
+                  placeholder="Your city or suburb"
                   value={editData.location?.city || ''}
-                  onChange={(e) => setEditData({ 
-                    ...editData, 
-                    location: { ...editData.location, city: e.target.value } 
+                  onChange={(e) => setEditData({
+                    ...editData,
+                    location: { ...editData.location, city: e.target.value }
                   })}
                   className="mt-1.5"
                 />
               </div>
 
               <div>
-                <Label>Address</Label>
-                <Input
-                  placeholder="Your address (optional)"
-                  value={editData.location?.address || ''}
-                  onChange={(e) => setEditData({ 
-                    ...editData, 
-                    location: { ...editData.location, address: e.target.value } 
-                  })}
-                  className="mt-1.5"
-                />
+                <Label>Area on the map</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleUseMyLocation}
+                  disabled={locating}
+                  className="mt-1.5 w-full"
+                >
+                  {locating ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Navigation className="w-4 h-4 mr-2" />
+                  )}
+                  {editData.location?.lat ? 'Update My Location' : 'Find My Area'}
+                </Button>
+                <p className="text-xs text-slate-500 mt-1.5">
+                  Your exact location is never shown — neighbors only ever see an
+                  approximate area (~300 m).
+                </p>
               </div>
 
               <div className="flex gap-3 pt-4">
