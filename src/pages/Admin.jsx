@@ -217,6 +217,8 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      // the DB trigger auto-hides the banned user's skills
+      queryClient.invalidateQueries({ queryKey: ['adminSkills'] });
       toast.success('User banned');
       setBanDialog(null);
       setBanReason('');

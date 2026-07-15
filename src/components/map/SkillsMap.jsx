@@ -14,8 +14,10 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
+const hasCoords = (p) => p?.lat != null && p?.lng != null;
+
 export default function SkillsMap({ center, skills = [], onSkillClick }) {
-  if (!center?.lat || !center?.lng) return null;
+  if (!hasCoords(center)) return null;
   return (
     <MapContainer
       center={[center.lat, center.lng]}
@@ -34,13 +36,13 @@ export default function SkillsMap({ center, skills = [], onSkillClick }) {
         pathOptions={{ color: '#059669', fillOpacity: 0.15 }}
       />
       {skills
-        .filter((s) => s.location?.lat && s.location?.lng)
+        .filter((s) => hasCoords(s.location))
         .map((skill) => (
           <Marker key={skill.id} position={[skill.location.lat, skill.location.lng]}>
             <Popup>
               <strong>{skill.title}</strong>
               <br />
-              {skill.user_name} · {skill.location.city}
+              {[skill.user_name, skill.location.city].filter(Boolean).join(' · ')}
               <br />
               <button
                 type="button"

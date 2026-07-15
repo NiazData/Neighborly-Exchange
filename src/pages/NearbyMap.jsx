@@ -50,10 +50,10 @@ export default function NearbyMap() {
 
   // The map is always centered on the viewer's own (fuzzy) area, never their
   // exact coordinates — mirrors the privacy guarantee applied to skill pins.
-  const center = user?.fuzzy_lat
+  const center = user?.fuzzy_lat != null
     ? { lat: user.fuzzy_lat, lng: user.fuzzy_lng }
     : { lat: user?.location?.lat, lng: user?.location?.lng };
-  const hasCenter = Boolean(center.lat && center.lng);
+  const hasCenter = center.lat != null && center.lng != null;
 
   const { data: skills = [] } = useQuery({
     queryKey: ['mapSkills', selectedCategory, selectedType],
@@ -64,7 +64,7 @@ export default function NearbyMap() {
 
       const results = await Skill.filter(filter, '-created_date', 100);
       // Filter skills with location data
-      return results.filter((s) => s.location?.lat && s.location?.lng);
+      return results.filter((s) => s.location?.lat != null && s.location?.lng != null);
     },
     enabled: hasCenter,
   });
