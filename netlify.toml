@@ -1,0 +1,20 @@
+[build]
+  # npm runs the "postbuild" script (sitemap + prerendered meta shells)
+  # automatically after "build".
+  command = "npm run build"
+  publish = "dist"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=()"
+
+# SPA fallback — prerendered routes exist as real files and therefore win
+# automatically on Netlify; everything else falls through to the app shell.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
