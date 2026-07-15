@@ -355,7 +355,7 @@ export default function Settings() {
                         />
                       </div>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           disabled={deleteConfirm !== 'DELETE' || deleting}
                           className="bg-red-600 hover:bg-red-700"

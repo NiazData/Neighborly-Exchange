@@ -47,14 +47,19 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, [loadUser]);
 
-  const logout = async (shouldRedirect = true) => {
+  // Stable references: useSessionTimeout depends on logout, and an unstable
+  // reference would reset its 24h session clock on every token refresh.
+  const logout = useCallback(async (shouldRedirect = true) => {
     await auth.logout();
     setUser(null);
     setIsAuthenticated(false);
     if (shouldRedirect) window.location.assign('/');
-  };
+  }, []);
 
-  const navigateToLogin = () => auth.redirectToLogin(window.location.pathname);
+  const navigateToLogin = useCallback(
+    () => auth.redirectToLogin(window.location.pathname),
+    [],
+  );
 
   return (
     <AuthContext.Provider value={{
