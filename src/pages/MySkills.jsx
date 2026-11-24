@@ -66,8 +66,8 @@ export default function MySkills() {
       setShowForm(false);
       setFormLoading(false);
     },
-    onError: () => {
-      toast.error('Failed to post skill');
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to post skill');
       setFormLoading(false);
     }
   });
@@ -81,8 +81,8 @@ export default function MySkills() {
       setEditingSkill(null);
       setFormLoading(false);
     },
-    onError: () => {
-      toast.error('Failed to update skill');
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to update skill');
       setFormLoading(false);
     }
   });
