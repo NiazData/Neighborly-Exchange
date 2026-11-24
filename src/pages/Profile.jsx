@@ -20,16 +20,26 @@ import {
 } from '@/components/ui/dialog';
 import {
   Pencil, MapPin, Star, CheckCircle, Shield, Camera,
-  ArrowRightLeft, Loader2, Navigation
+  ArrowRightLeft, Loader2, Navigation, Image as ImageIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import Seo from '@/components/Seo';
 
+const PRESET_AVATARS = [
+  { id: 'male-child', url: '/avatars/male-child.svg', label: 'Boy' },
+  { id: 'male-young', url: '/avatars/male-young.svg', label: 'Man' },
+  { id: 'male-elderly', url: '/avatars/male-elderly.svg', label: 'Older man' },
+  { id: 'female-child', url: '/avatars/female-child.svg', label: 'Girl' },
+  { id: 'female-young', url: '/avatars/female-young.svg', label: 'Woman' },
+  { id: 'female-elderly', url: '/avatars/female-elderly.svg', label: 'Older woman' },
+];
+
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showAvatarDialog, setShowAvatarDialog] = useState(false);
   const [editData, setEditData] = useState({});
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -108,6 +118,17 @@ export default function Profile() {
     }
   };
 
+  const handleSelectAvatar = async (url) => {
+    try {
+      await auth.updateMe({ avatar_url: url });
+      await loadUser();
+      setShowAvatarDialog(false);
+      toast.success('Profile photo updated!');
+    } catch (error) {
+      toast.error(error.message || 'Could not update avatar');
+    }
+  };
+
   const handleSaveProfile = async () => {
     setLoading(true);
     await auth.updateMe(editData);
@@ -146,19 +167,27 @@ export default function Profile() {
                       {user.full_name?.[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <label className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                  <label className="absolute bottom-2 right-9 p-2 bg-white rounded-full shadow-lg cursor-pointer hover:bg-slate-50 transition-colors" title="Upload a photo">
                     {uploading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Camera className="w-4 h-4 text-slate-600" />
                     )}
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
                       onChange={handleAvatarUpload}
                     />
                   </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAvatarDialog(true)}
+                    title="Choose an avatar"
+                    className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-lg cursor-pointer hover:bg-slate-50 transition-colors"
+                  >
+                    <ImageIcon className="w-4 h-4 text-slate-600" />
+                  </button>
                 </div>
 
                 {/* Info */}
@@ -423,6 +452,32 @@ export default function Profile() {
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Avatar Picker Dialog */}
+        <Dialog open={showAvatarDialog} onOpenChange={setShowAvatarDialog}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Choose an avatar</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-3 gap-4 mt-4">
+              {PRESET_AVATARS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => handleSelectAvatar(preset.url)}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <Avatar className={`w-20 h-20 border-2 transition-colors ${
+                    user.avatar_url === preset.url ? 'border-emerald-500' : 'border-transparent group-hover:border-emerald-200'
+                  }`}>
+                    <AvatarImage src={preset.url} alt={preset.label} />
+                  </Avatar>
+                  <span className="text-xs text-slate-500">{preset.label}</span>
+                </button>
+              ))}
             </div>
           </DialogContent>
         </Dialog>

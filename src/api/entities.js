@@ -51,6 +51,7 @@ export const Report = createEntity('reports');
 export const VerificationRequest = createEntity('verification_requests');
 export const ActivityLog = createEntity('activity_logs');
 export const UserWarning = createEntity('user_warnings');
+export const Notification = createEntity('notifications');
 
 // Reads about OTHER users go through the privacy-preserving view.
 // Admin writes (verify/suspend) and admin lists hit profiles (RLS gates them).

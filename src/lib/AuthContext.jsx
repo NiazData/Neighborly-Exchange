@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { auth } from '@/api/auth';
+import { markSessionStart, clearSessionClock } from '@/lib/sessionClock';
 
 const AuthContext = createContext();
 
@@ -37,8 +38,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     loadUser();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') markSessionStart();
       if (['SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) loadUser();
       if (event === 'SIGNED_OUT') {
+        clearSessionClock();
         setUser(null);
         setIsAuthenticated(false);
         setIsLoadingAuth(false);
@@ -49,10 +52,13 @@ export const AuthProvider = ({ children }) => {
 
   // Stable references: useSessionTimeout depends on logout, and an unstable
   // reference would reset its 24h session clock on every token refresh.
-  const logout = useCallback(async (shouldRedirect = true) => {
-    await auth.logout();
+  const logout = useCallback((shouldRedirect = true) => {
+    // Clear local state and navigate immediately; the network signOut call
+    // doesn't need to block the UI — it still revokes the session server-side.
+    clearSessionClock();
     setUser(null);
     setIsAuthenticated(false);
+    auth.logout().catch(() => {});
     if (shouldRedirect) window.location.assign('/');
   }, []);
 

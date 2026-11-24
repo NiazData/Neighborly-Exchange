@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { auth } from '@/api/auth';
+import { useAuth } from '@/lib/AuthContext';
 import { UserWarning } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -50,6 +51,7 @@ const languages = [
 ];
 
 export default function Settings() {
+  const { logout } = useAuth();
   const [user, setUser] = useState(null);
   const [settings, setSettings] = useState({
     preferred_language: 'en',
@@ -91,7 +93,7 @@ export default function Settings() {
   };
 
   const handleLogout = () => {
-    auth.logout();
+    logout();
   };
 
   const handleDeleteAccount = async () => {

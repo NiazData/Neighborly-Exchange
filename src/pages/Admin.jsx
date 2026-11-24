@@ -651,7 +651,9 @@ export default function Admin() {
             <DialogHeader>
               <DialogTitle>Review Verification Request</DialogTitle>
             </DialogHeader>
-            {selectedVerification && (
+            {selectedVerification && (() => {
+              const profile = allUsers.find((u) => u.id === selectedVerification.user_id);
+              return (
               <div className="space-y-6 mt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -673,6 +675,29 @@ export default function Admin() {
                     <p className="font-medium">{format(new Date(selectedVerification.created_date), 'MMM d, yyyy h:mm a')}</p>
                   </div>
                 </div>
+
+                {selectedVerification.kind === 'profile' && (
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                    <p className="text-sm font-medium text-slate-700">Profile on file</p>
+                    {profile ? (
+                      <div className="flex gap-4">
+                        <Avatar className="h-16 w-16 shrink-0">
+                          <AvatarImage src={profile.avatar_url} alt={profile.full_name} />
+                          <AvatarFallback>{profile.full_name?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-1 text-sm">
+                          <p><span className="text-slate-500">City:</span> {profile.location?.city || '—'}</p>
+                          <p><span className="text-slate-500">Phone:</span> {profile.phone || '—'}</p>
+                          <p><span className="text-slate-500">Bio:</span> {profile.bio || '—'}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-amber-700">
+                        Profile not found in the first 100 most-recently-created users — open the Users tab and search for this person directly.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {selectedVerification.id_document_url || selectedVerification.selfie_url ? (
                   <div className="grid grid-cols-2 gap-4">
@@ -701,11 +726,11 @@ export default function Admin() {
                       </div>
                     )}
                   </div>
-                ) : (
+                ) : selectedVerification.kind !== 'profile' ? (
                   <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                    Profile-completeness verification — check the user's profile is complete before approving.
+                    No documents were attached to this request.
                   </div>
-                )}
+                ) : null}
 
                 <div>
                   <p className="text-sm text-slate-500 mb-2">Rejection Reason (if rejecting)</p>
@@ -746,7 +771,8 @@ export default function Admin() {
                   </Button>
                 </div>
               </div>
-            )}
+              );
+            })()}
           </DialogContent>
         </Dialog>
 

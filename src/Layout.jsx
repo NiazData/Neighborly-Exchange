@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { Message } from '@/api/entities';
 import { auth } from '@/api/auth';
+import { useAuth } from '@/lib/AuthContext';
 import {
   Home, Search, MessageSquare, Users, Settings, Menu, 
   Map, HandHeart, ArrowLeftRight, Shield, LogOut,
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import NotificationBell from '@/components/NotificationBell';
 
 const translations = {
   en: {
@@ -82,35 +84,20 @@ const translations = {
 
 export default function Layout({ children, currentPageName }) {
   useSessionTimeout();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isLoadingAuth: loading, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const navigate = useNavigate();
-  
+
   const lang = user?.preferred_language || 'en';
   const t = translations[lang] || translations.en;
   const isRTL = lang === 'ar';
-
-  useEffect(() => {
-    loadUser();
-  }, []);
 
   useEffect(() => {
     if (user) {
       loadUnreadCount();
     }
   }, [user]);
-
-  const loadUser = async () => {
-    try {
-      const userData = await auth.me();
-      setUser(userData);
-    } catch (e) {
-      console.log('Not logged in');
-    }
-    setLoading(false);
-  };
 
   const loadUnreadCount = async () => {
     try {
@@ -120,7 +107,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const handleLogout = () => {
-    auth.logout();
+    logout();
   };
 
   const navItems = [
@@ -132,7 +119,7 @@ export default function Layout({ children, currentPageName }) {
     { name: t.map, icon: Map, page: 'NearbyMap' },
   ];
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = !!user?.is_admin;
 
   if (loading) {
     return (
@@ -156,7 +143,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-shadow">
                 <Users className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-xl text-slate-800 hidden sm:block">Neighbourly Exchange</span>
+              <span className="font-bold text-xl text-slate-800 hidden sm:block">Neighborly Exchange</span>
             </Link>
 
             {/* Desktop Nav */}
@@ -184,6 +171,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center gap-3">
               {user ? (
                 <>
+                  <NotificationBell userId={user.id} />
                   {isAdmin && (
                     <Link to={createPageUrl('Admin')}>
                       <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2 text-amber-600 hover:bg-amber-50">
@@ -296,7 +284,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <Users className="w-4 h-4 text-white" />
               </div>
-              <span className="font-semibold text-slate-700">Neighbourly Exchange</span>
+              <span className="font-semibold text-slate-700">Neighborly Exchange</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-slate-500">
               <Link to={createPageUrl('Terms')} className="hover:text-emerald-600 transition-colors">
@@ -309,7 +297,7 @@ export default function Layout({ children, currentPageName }) {
                 Legal
               </Link>
             </div>
-            <p className="text-sm text-slate-400">© 2026 Neighbourly Exchange</p>
+            <p className="text-sm text-slate-400">© 2026 Neighborly Exchange</p>
           </div>
         </div>
       </footer>
