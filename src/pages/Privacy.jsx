@@ -68,7 +68,7 @@ The interactive map loads its map imagery from OpenStreetMap. Like any web reque
       <Seo
         title="Privacy Policy"
         path="/Privacy"
-        description="How Neighbourly Exchange collects, uses, and protects your data."
+        description="How Neighborly Exchange collects, uses, and protects your data."
       />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <motion.div
@@ -86,7 +86,7 @@ The interactive map loads its map imagery from OpenStreetMap. Like any web reque
           <Card className="border-emerald-200 bg-emerald-50 mb-8">
             <CardContent className="p-6">
               <p className="text-emerald-800 font-medium">
-                Neighbourly Exchange is free to use, with no ads and no tracking. This policy explains what information we collect, how it's used, and how location privacy works.
+                Neighborly Exchange is free to use, with no ads and no tracking. This policy explains what information we collect, how it's used, and how location privacy works.
               </p>
             </CardContent>
           </Card>

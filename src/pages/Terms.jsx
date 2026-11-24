@@ -9,7 +9,7 @@ export default function Terms() {
     {
       icon: Users,
       title: "1. Acceptance of Terms",
-      content: `By accessing and using Neighbourly Exchange ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.`
+      content: `By accessing and using Neighborly Exchange ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.`
     },
     {
       icon: Shield,
@@ -19,7 +19,7 @@ export default function Terms() {
     {
       icon: Scale,
       title: "3. Free, Non-Commercial Exchanges",
-      content: `Neighbourly Exchange is completely free to use. The Platform facilitates skill exchanges between neighbors on a barter basis only — no money changes hands between members for an exchange, and the platform does not charge fees or process payments. Requesting or offering monetary payment through the Platform is not permitted.`
+      content: `Neighborly Exchange is completely free to use. The Platform facilitates skill exchanges between neighbors on a barter basis only — no money changes hands between members for an exchange, and the platform does not charge fees or process payments. Requesting or offering monetary payment through the Platform is not permitted.`
     },
     {
       icon: FileText,
@@ -49,7 +49,7 @@ export default function Terms() {
       <Seo
         title="Terms of Service"
         path="/Terms"
-        description="The terms that govern using Neighbourly Exchange."
+        description="The terms that govern using Neighborly Exchange."
       />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <motion.div
@@ -92,7 +92,7 @@ export default function Terms() {
               <CardContent className="p-6">
                 <h2 className="text-xl font-semibold text-slate-800 mb-3">7. Exchanges Are Between Members</h2>
                 <p className="text-slate-600 leading-relaxed">
-                  Exchanges arranged through the Platform are agreements between the members involved. We recommend meeting in safe, public locations for the first exchange. Neighbourly Exchange is not a party to any exchange and is not liable for the outcome, quality, or safety of any exchange conducted through the Platform.
+                  Exchanges arranged through the Platform are agreements between the members involved. We recommend meeting in safe, public locations for the first exchange. Neighborly Exchange is not a party to any exchange and is not liable for the outcome, quality, or safety of any exchange conducted through the Platform.
                 </p>
               </CardContent>
             </Card>

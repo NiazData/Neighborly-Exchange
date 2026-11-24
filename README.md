@@ -1,13 +1,13 @@
-# Neighbourly Exchange
+# Neighborly Exchange
 
-Neighbourly Exchange is a neighborhood skill-exchange web app: residents create a
+Neighborly Exchange is a neighborhood skill-exchange web app: residents create a
 profile, post skills they offer or need, find nearby neighbors on a
 privacy-preserving map, agree on exchanges, chat in realtime, and review each
 other after completion. No money changes hands between neighbors — v1 is
 completely free, with no ads and no tracking.
 
-Design spec: [docs/superpowers/specs/2026-07-14-neighbourly-exchange-design.md](docs/superpowers/specs/2026-07-14-neighbourly-exchange-design.md)
-Implementation plan: [docs/superpowers/plans/2026-07-14-neighbourly-exchange.md](docs/superpowers/plans/2026-07-14-neighbourly-exchange.md)
+Design spec: [docs/superpowers/specs/2026-07-14-neighborly-exchange-design.md](docs/superpowers/specs/2026-07-14-neighbourly-exchange-design.md)
+Implementation plan: [docs/superpowers/plans/2026-07-14-neighborly-exchange.md](docs/superpowers/plans/2026-07-14-neighborly-exchange.md)
 
 **Stack:** React 18 + Vite + Tailwind/shadcn · Supabase (Postgres, Auth,
 Realtime, Storage) · Leaflet + OpenStreetMap · Netlify

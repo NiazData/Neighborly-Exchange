@@ -202,7 +202,7 @@ export default function SkillDetail() {
       <Seo
         title={skill.title}
         path={`/SkillDetail?id=${skill.id}`}
-        description={`${skill.title} — a ${skill.type} on Neighbourly Exchange in ${skill.location?.city || 'your area'}.`}
+        description={`${skill.title} — a ${skill.type} on Neighborly Exchange in ${skill.location?.city || 'your area'}.`}
         jsonLd={{
           '@context': 'https://schema.org',
           '@graph': [

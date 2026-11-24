@@ -74,12 +74,12 @@ export default function Home() {
     <div className="min-h-screen">
       <Seo
         path="/"
-        description="Neighbourly Exchange connects you with neighbors to swap skills, services, and favors — no money needed. Verified members, tracked exchanges, honest reviews."
+        description="Neighborly Exchange connects you with neighbors to swap skills, services, and favors — no money needed. Verified members, tracked exchanges, honest reviews."
         jsonLd={{
           '@context': 'https://schema.org',
           '@graph': [
-            { '@type': 'Organization', name: 'Neighbourly Exchange', url: SITE_URL },
-            { '@type': 'WebSite', name: 'Neighbourly Exchange', url: SITE_URL },
+            { '@type': 'Organization', name: 'Neighborly Exchange', url: SITE_URL },
+            { '@type': 'WebSite', name: 'Neighborly Exchange', url: SITE_URL },
           ],
         }}
       />
